@@ -3,7 +3,14 @@ import numpy as np
 from math import ceil
 
 def loadFromMat(filedir, Fs = 10e3, rFs = 256):
-    """Loads folder of matlab data files and saves them in numpy format"""
+    """Loads folder of matlab data files and saves them in numpy format.
+    
+    Args: 
+        filedir: the root folder to import
+        Fs: sampling frequency rate
+        rFS: resampling frequency rate
+    
+    """
     pts = [343*Fs+1, 643*Fs]
 
     electrodes = [
