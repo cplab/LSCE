@@ -3,6 +3,8 @@ import numpy as np
 import h5py
 import os
 
+import Importer
+
 def formatData(fileDir, name, *options):
     """Loads raw numpy arrays from a folder and saves them in hdf5 file format. Tagging information about the arrays may be supplied
         in a seperate file.
@@ -16,9 +18,8 @@ def formatData(fileDir, name, *options):
     for files in os.listdir("."):
         if(files.endswith(".npy")):
             tmp=np.load(files)
-            dset=f.create_dataset(files[0:files.index(".npy")], len(tmp), dtype='f')
-            dset.write_direct(tmp)
+            dset=f.create_dataset(files[0:files.index(".npy")], data=tmp)
             f.flush()
     f.close()
 
-    return f.filename
+    return f
