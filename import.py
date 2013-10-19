@@ -24,3 +24,5 @@ def loadFromMat(filedir, Fs = 10e3, rFs = 256):
         data = mat[pts[0]:pts[1]]
         data = np.subtract(data, np.mean(data))
         np.save("{0}\Electrode_{1}_master".format(filedir,ii), mat)
+
+    return filedir
