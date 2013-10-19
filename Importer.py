@@ -1,6 +1,7 @@
 import scipy.io
 import numpy as np
 from math import ceil
+import os
 
 def loadFromMat(filedir, Fs = 10e3, rFs = 256):
     """Loads folder of matlab data files and saves them in numpy format.
@@ -20,9 +21,9 @@ def loadFromMat(filedir, Fs = 10e3, rFs = 256):
     ]
 
     for ii in electrodes:
-        mat = scipy.io.loadmat("{0}\Electrode_{1}_master.mat".format(filedir, ii))["dataheap"]
-        data = mat[pts[0]:pts[1]]
+        mat = scipy.io.loadmat("{0}{2}Electrode_{1}_master.mat".format(filedir, ii, os.sep))["dataheap"]
+        data = np.array(mat[pts[0]:pts[1]],order='C',dtype=np.float32)
         data = np.subtract(data, np.mean(data))
-        np.save("{0}\Electrode_{1}_master".format(filedir,ii), mat)
+        np.save("{0}{2}Electrode_{1}_master".format(filedir,ii, os.sep), data)
 
     return filedir
