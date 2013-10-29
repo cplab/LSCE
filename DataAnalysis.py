@@ -2,9 +2,10 @@ from numpy import *
 from scipy import signal
 
 class DataAnalysis:
-  def __init__(self):
-    self.data = array([]) # Consider multiple data sets - perhaps a dictionary?
-    self.sampling_rate = 0 # Hertz
+  
+  def __init__(self, data = array([]), sampling_rate = 0):
+    self.data = data # Consider multiple data sets - perhaps a dictionary?
+    self.sampling_rate = sampling_rate # Hertz
 
   def data_initialized(self):
     """Returns true or false depending on if the data is initialized."""
@@ -27,13 +28,24 @@ class DataAnalysis:
     self.data = numpy.load(file_path)
 
   # Analysis methods
-  def high_pass_filter(self,filter_freq,channels):
-    """Performs a high pass 5th order Butterworth filter on self.data"""
+  def high_pass_filter(self,filter_freq,channels,order=5):
+    """Performs a high pass (by default) 5th order Butterworth filter on self.data"""
     if not data_initialized():
       print "Data not initialized!"
       break
 
     # The order of the filter should be determined in production. Maybe a parameter?
-    b, a = signal.butter(5, filter_freq / (self.sampling_rate/2.), btype='high') # Normalized to Nyquist frequency
+    b, a = signal.butter(order, filter_freq / (self.sampling_rate/2.), btype='high') # Normalized to Nyquist frequency
 
+    return signal.lfilter(b, a, self.data)
+    
+  def low_pass_filter(self, filter_freq, channels):
+    """Performs a low-pass filter on self.data"""
+    if not data_initialized():
+      print "Data not initialized!"
+      break
+    
+    # TODO: Figure out what to use as cutoff
+    b, a = signal.firwin(self.filter_freq, cutoff = None, window = "hamming")
+    
     return signal.lfilter(b, a, self.data)
