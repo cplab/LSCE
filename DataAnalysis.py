@@ -1,6 +1,8 @@
 from numpy import *
 from scipy import signal
 
+import h5py
+
 class DataAnalysis:
   
   def __init__(self, data = array([]), sampling_rate = 0):
@@ -12,10 +14,16 @@ class DataAnalysis:
     return self.data.size != 0 and self.sampling_rate > 0
 
   # Loaders
-  def load_hdf5(self,file):
+  def load_hdf5(self, file, dataset_name, group_name=None):
     """Loads data from an HDF5 file to be analyzed."""
     # Once the file format is standardized the method implementation will become more clear
-    self.data = array(range(10)) # Temporary for now
+    dataset = None
+    with h5py.File(file) as f:
+      if group_name is not None:
+        dataset = f[group_name][dataset_name]
+      else:
+        dataset = f[dataset_name] # No group by default, double-check with Nick
+      self.data = np.array(dataset)
 
   def load_array(self,array):
     """Loads data from a Numpy array."""
