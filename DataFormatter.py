@@ -5,7 +5,7 @@ import time
 
 
 def timestamp():
-    return time.strftime("_%H:%M:%S:0000_%m-%d-%Y_GMT", time.gmtime())
+    return time.strftime("_%H-%M%-S0000_%m-%d-%Y_GMT", time.gmtime())
 
 
 def formatData(fileDir, name, **options):
