@@ -5,7 +5,7 @@ import time
 
 
 def timestamp():
-    return time.strftime("_%H-%M%-S0000_%m-%d-%Y_GMT", time.gmtime())
+    return time.strftime("_%H-%M%-S-0000_%m-%d-%Y_GMT", time.gmtime())
 
 
 def formatData(fileDir, name, **options):
@@ -18,7 +18,6 @@ def formatData(fileDir, name, **options):
     """
     #Decode launch options
     file_access_mode = 'r+' if ('-a' in options) else "w"
-    #timestamp = time.strftime("_%H:%M:%S:0000_%m-%d-%Y_GMT", time.gmtime()) if ('-t' in options) else ''
     f = h5py.File(name+".hdf5", file_access_mode)
     if(not ('raw_data' in f)):
         data_dir = f.create_group("raw_data")
@@ -33,7 +32,6 @@ def formatData(fileDir, name, **options):
                 dset = data_dir.create_dataset(conflict_name, data=tmp)
             else:
                 dset = data_dir.create_dataset(files[0:files.index(".npy")], data=tmp)
-
             dset.attrs.create("shape", np.shape(tmp))
             dset.attrs.create("dtype", tmp.dtype)
             numsets = data_dir.attrs.get("count")
@@ -42,5 +40,4 @@ def formatData(fileDir, name, **options):
     data_dir.attrs.modify("last_modified", [timestamp()])
     #At this point, the raw datasets have each been imported from the .npy files.
     #We now check formatting options for important attributes
-    f.close()
     return f
