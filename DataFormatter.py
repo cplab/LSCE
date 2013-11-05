@@ -14,7 +14,7 @@ def formatData(fileDir, name, **options):
 
         Args:
             fileDir: the absolute path to a directory containing one or more numpy files.
-            *options: An optional list of command-line switches or paths to additional files containing tagging information
+            **options: An optional list of attributes to attach to the raw_data directory
     """
     #Decode launch options
     file_access_mode = 'r+' if ('-a' in options) else "w"

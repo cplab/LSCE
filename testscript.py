@@ -25,8 +25,8 @@ def main(argv=None):
                 raise Usage(msg)
         for option, data in opts:
             if('-h' == option or '--help' == option):
-                print "LSCE test script. Usage: \"python testscript.py mat_source hdf5_dest " + \
-                    "\"\n\nSupply the following arguments to run pipeline:\n\tmat_source: " + \
+                print "LSCE test script. Usage: \"python testscript.py mat_source hdf5_dest" + \
+                    "\"\n\nSupply the following arguments to run pipeline:\n\n\tmat_source: " + \
                     "The path to the raw .mat files to be imported.\n\thdf5_dest: the name to save hdf5 output file under"
             return
         if(len(args) < 2):
