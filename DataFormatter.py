@@ -5,10 +5,10 @@ import time
 
 
 def timestamp():
-    return time.strftime("_%H-%M%-S-0000_%m-%d-%Y_GMT", time.gmtime())
+    return time.strftime("_%H-%M-%S-0000_%m-%d-%Y_GMT", time.gmtime())
 
 
-def formatData(fileDir, name, **options):
+def formatData(fileDir, name, *options):
     """Loads raw numpy arrays from a folder and saves them in hdf5 file format.
         Each array will be given its own dataset under the group 'raw_data'.
 
@@ -33,9 +33,12 @@ def formatData(fileDir, name, **options):
             else:
                 dset = data_dir.create_dataset(files[0:files.index(".npy")], data=tmp)
             dset.attrs.create("shape", np.shape(tmp))
-            dset.attrs.create("dtype", tmp.dtype)
+            dset.attrs.create("dtype", tmp.dtype.__repr__())
             numsets = data_dir.attrs.get("count")
-            data_dir.attrs.modify("count", [numsets[0] + 1])
+            if numsets is not None:
+                data_dir.attrs.modify("count", [numsets[0] + 1])
+            else:
+                data_dir.attrs.modify("count", [1])
             f.flush()
     data_dir.attrs.modify("last_modified", [timestamp()])
     #At this point, the raw datasets have each been imported from the .npy files.

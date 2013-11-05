@@ -4,6 +4,8 @@ import DataAnalysis
 import collections
 import getopt
 import sys
+import os
+from matplotlib import pyplot as plt
 
 
 class Usage(Exception):
@@ -33,8 +35,22 @@ def main(argv=None):
             raise Usage("Insufficient arguments supplied.")
         else:
             print args.__repr__()
-        Importer.loadFromMat(args[1])
-        DataFormatter.formatData(args[1], args[2])
+        #Importer.loadFromMat(args[0])
+        hdfile = DataFormatter.formatData(args[0], args[1])
+        #print "Press any key to continue..."
+        os.system("PAUSE")
+        hdfile.close()
+        dtool = DataAnalysis.data_analysis()
+        dtool.load_hdf5(args[1], dataset_name="Electrode_12_master", group_name="raw_data")
+        dtool.sampling_rate = 1000
+        dtool.high_pass_filter(42)
+
+        plt.subplot(2, 1, 1)
+        plt.plot(dtool.data)
+        plt.subplot(2, 1, 2)
+        plt.plot(dtool.f["raw_data"]["Electrode_12_master"])
+        plt.show()
+        dtool.close()
     except Usage, err:
         print >>sys.stderr, err.msg
         print >>sys.stderr, "For help use --help"

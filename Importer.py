@@ -4,6 +4,7 @@ import numpy as np
 from math import ceil
 import os
 import tempfile
+import gc
 
 
 electrodes = [
@@ -66,12 +67,17 @@ def loadFromMat(filedir, Fs=10e3, rFs=256):
     pts = [343*Fs+1, 643*Fs]
 
     for ii in electrodes:
+        print "Parsing electrode " + ii.__repr__()
         mat = scipy.io.loadmat(
             "{0}{2}Electrode_{1}_master.mat".format(filedir, ii, os.sep)
         )["dataheap"]
+        print "Load success."
         data = np.array(mat[pts[0]:pts[1]], order='C', dtype=np.float32)
         data = np.subtract(data, np.mean(data))
         np.save("{0}{2}Electrode_{1}_master".format(filedir, ii, os.sep), data)
+        print "saved electrode "+ ii.__repr__()
+        mat = None
+        gc.collect()
 
     return filedir
 
