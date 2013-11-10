@@ -1,3 +1,4 @@
+#TODO: Fix labels initial position & hiding after scrolling
 from numpy import arange, sin, pi, float, size
 
 import matplotlib
@@ -11,7 +12,8 @@ class MyFrame(wx.Frame):
     
     def __init__(self, parent, id):
         self.empty=[0,7,56,63]        
-        
+        self.electrodeX=8;
+        self.electrodeY=8;
         wx.Frame.__init__(self,parent, id, 'scrollable plot',
                 style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER,
                 size=(800, 400))
@@ -54,11 +56,12 @@ class MyFrame(wx.Frame):
         self.i_end = self.i_start + self.i_window
 
     def init_plot(self):
+        
         self.axes=[]
         self.graphs = []
         for j in range (64):
             if j not in self.empty:
-                self.axes.append(self.fig.add_subplot(8,8,j+1))
+                self.axes.append(self.fig.add_subplot(self.electrodeX,self.electrodeY,j+1))
           
                 self.axes[j].yaxis.set_major_locator(matplotlib.ticker.NullLocator())
                 self.axes[j].xaxis.set_major_locator(matplotlib.ticker.NullLocator())
@@ -69,9 +72,26 @@ class MyFrame(wx.Frame):
             else:
                 self.axes.append(0)
                 self.graphs.append(0)
-
+        
+        #Start Time End Time Labels        
+        self.dimensions = self.canvas.get_width_height() 
+        self.label1x=self.dimensions[0]/4
+        self.labely=(self.dimensions[1]-50)
+        self.label2x=3*(self.dimensions[0]/4)        
+        
+        #Start Time End Time Label Positioning        
+        self.startTime = wx.TextCtrl(self.panel, value="Start Time: "+
+            self.i_start.__repr__(), pos=(self.label1x, self.labely), size=(140,-1))
+        self.endTime = wx.TextCtrl(self.panel, value="End Time: "+
+            self.i_end.__repr__(), pos=(self.label2x, self.labely), size=(140,-1))    
+            
     def draw_plot(self):
-
+        
+        #Start End Labels position scaled according to window size
+        self.dimensions = self.canvas.get_width_height() 
+        self.label1x=self.dimensions[0]/4
+        self.labely=self.dimensions[1]-50
+        self.label2x=3*(self.dimensions[0]/4)
         
         # Adjust plot limits:
         for i in range (64):
@@ -83,13 +103,18 @@ class MyFrame(wx.Frame):
                            max(self.t[self.i_start:self.i_end])))
                 self.axes[i].set_ylim((min(self.x[self.i_start:self.i_end]),
                             max(self.x[self.i_start:self.i_end])))
-                            
-              
+        
+        #Update Start/End Labels                   
+        self.startTime.value="Start Time: " + self.i_start.__repr__()
+        self.endTime.value="End Time: " + self.i_end.__repr__()
+        
         # Redraw:                  
         self.canvas.draw()
 
     def OnScrollEvt(self, event):
-
+                
+        self.canvas.SetScrollPos(wx.HORIZONTAL, event.GetPosition(), True)
+        
         # Update the indices of the plot:
         self.i_start = self.i_min + event.GetPosition()
         self.i_end = self.i_min + self.i_window + event.GetPosition()
