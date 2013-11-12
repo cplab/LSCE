@@ -1,5 +1,7 @@
 from numpy import *
-from scipy import signal
+import scipy
+import sys
+from scipy.signal import butter, lfilter
 import datetime
 
 import h5py
@@ -11,6 +13,7 @@ class data_analysis(object):
     self.f = None
     self.data = None # Consider multiple data sets - perhaps a dictionary?
     self.sampling_rate = 2 # Hertz
+    self.count=0
 
     if filename is not None and dataset_name is not None:
       self.load_hdf5(filename, dataset_name, group_name)
@@ -27,7 +30,7 @@ class data_analysis(object):
   # Loaders
   def load_hdf5(self, filename, dataset_name, group_name=None, dataset_rename=None):
     """Loads data from an HDF5 file to be analyzed."""
-    self.f = h5py.File(filename+".hdf5", "a")
+    self.f = h5py.File(filename+".hdf5", "r+")
     self.f.require_group("data_analysis")
 
     if dataset_rename is None:
@@ -37,6 +40,7 @@ class data_analysis(object):
       if group_name in self.f and dataset_name in self.f[group_name]:
         self.f.copy("/" + group_name + "/" + dataset_name, "/data_analysis/" + dataset_rename)
       elif not group_name in self.f:
+        print self.f.keys().__repr__()
         print "Group " + group_name + " is not found in the file."
         return
       else:
@@ -50,6 +54,38 @@ class data_analysis(object):
     self.data = self.f["data_analysis"][dataset_rename]
     print "Dataset " + dataset_rename + " created and staged."
 
+  def butter_bandpass(self, lowcut, highcut, fs, order=5):
+    nyq = 0.5 * fs
+    low = lowcut / nyq
+    high = highcut / nyq
+    b, a = butter(order, [low, high], btype='band')
+    return b, a
+
+
+  def band_pass_filter(self, low, high, order=5):
+    b, a = self.butter_bandpass(low, high, self.sampling_rate)
+    tmp = lfilter(b, a, self.data)
+    print tmp.__repr__()
+    self.data[:] = tmp
+    self.f.flush()
+
+  def high_demo_filter(self, freq):
+    bresults = self.f['data_analysis'].create_dataset("boolean_results", self.data.shape, dtype=self.data.dtype)
+    results = self.f['data_analysis'].create_dataset("demo_filter_results", self.data.shape, dtype=self.data.dtype)
+    print "Processing dataset. Please wait..."
+    for i in range(len(self.data)):
+      if i % (len(self.data)/10) == 0:
+        print (i/(len(self.data)/10)).__repr__()+"0% complete."
+      if abs(self.data[i]) < freq:
+        results[i] = 0
+      else:
+        results[i] = self.data[i]
+    #print "Beginning lowpass filter"
+    #bresults[:] = self.data > freq
+    #print "Boolean matrix created."
+    #results[:] = results[self.data > freq]
+    self.f.flush()
+    return results
   # Analysis methods
   # TODO Really a low pass filter
   def high_pass_filter(self,filter_freq,channels= 1,order=5):

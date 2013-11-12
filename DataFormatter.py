@@ -23,6 +23,8 @@ def formatData(fileDir, name, *options):
         data_dir = f.create_group("raw_data")
     else:
         data_dir = f['raw_data']
+    tmpdir = os.path.abspath(os.curdir)
+    print tmpdir
     os.chdir(fileDir)
     for files in os.listdir("."):
         if(files.endswith(".npy")):
@@ -39,8 +41,9 @@ def formatData(fileDir, name, *options):
                 data_dir.attrs.modify("count", [numsets[0] + 1])
             else:
                 data_dir.attrs.modify("count", [1])
-            f.flush()
     data_dir.attrs.modify("last_modified", [timestamp()])
     #At this point, the raw datasets have each been imported from the .npy files.
     #We now check formatting options for important attributes
-    return f
+    os.chdir(tmpdir)
+    f.flush()
+    f.close()
