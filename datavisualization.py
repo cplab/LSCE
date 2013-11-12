@@ -5,6 +5,7 @@ import matplotlib
 matplotlib.use('WXAgg')
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg
 from matplotlib.figure import Figure
+import matplotlib.pyplot as plt
 
 import wx
 
@@ -35,6 +36,7 @@ class MyFrame(wx.Frame):
         self.init_plot()
 
         self.canvas.Bind(wx.EVT_SCROLLWIN, self.OnScrollEvt)
+        self.canvas.mpl_connect('button_press_event',self.onclick)
         
 
     def init_data(self):
@@ -119,6 +121,20 @@ class MyFrame(wx.Frame):
         self.i_start = self.i_min + event.GetPosition()
         self.i_end = self.i_min + self.i_window + event.GetPosition()
         self.draw_plot()
+    
+    def onclick(self, event):
+        #print "clicked"
+        i=0
+        while i < 64:
+            if i not in self.empty:
+                if event.inaxes == self.axes[i]:
+                    fig2 = plt.figure()
+                    ax_single = fig2.add_subplot(111)
+                    #input in data ....
+                    fig2.canvas.set_window_title('Plot %d' %(i+1))
+                    fig2.show()
+                    break                
+            i+=1
 
 class MyApp(wx.App):
     def OnInit(self):
