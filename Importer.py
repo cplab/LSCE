@@ -5,6 +5,7 @@ from math import ceil
 import os
 import tempfile
 import gc
+import shutil
 
 
 electrodes = [
@@ -23,33 +24,49 @@ def smash2(filedir, workingdir, type, fileNum):
     #data = array.array("H")
     #data.fromfile(fid, fileSize/2)
     data = np.fromfile(fid, dtype=np.uint16)
-    
+    #print len(data)
+    #temp = np.zeros((1,len(data)))
+    #data = data.astype(np.float32, copy=False)
+    #print len(data)
     #convertedData = [(x-32768)*0.0104 for x in data]
-    data -= 32768
-    data *= 0.0104
+    #data -= 32768
+    #data *= 0.0104
     
     numelec = 60
-    out = []
+    #out = []
     for i in range(numelec):
-        #out.append(data[i:data.size:numelec])
-        np.save(workingdir + os.sep + "Electrode_"+str(electrodes[i])+"_"+str(fileNum), data[i:data.size:numelec])
+        #The whole is too big to fit into memory, so we process chunk by chunk
+        temp = data[i:data.size:numelec]
+        temp = temp.astype(np.float32, copy=False)
+        temp-=32768
+        temp*=0.0104
+        np.save(workingdir + os.sep + "Electrode_"+str(electrodes[i])+"_"+str(fileNum), temp)
     return
 
 def mergemat(filename, numFiles, Fs):
-    datatemp = np.load(filename+"0.npy")
+    #apprently, the first and last has different sizes
+    # datatemp = np.load(filename+"0.npy")
     
-    L = (2*60)*Fs
+    # L = (2*60)*Fs
     
-    data = np.zeros((L,numFiles-2))
+    # data = np.zeros((L,numFiles-2))
     
-    for i in range(numFiles-2):
-        data[:,i+1] = np.load(filename + i+1)
+    dataheap = []
     
-    L2 = (numFiles-2)*L
-    dataheap = np.reshape(data, (L2,1))
+    for i in range(numFiles):
+        # data[:,i] = np.load(filename + str(i+1)+".npy")
+        dataheap = np.append(dataheap, np.load(filename + str(i)+".npy"))
     
-    data = np.load(filename + str(numFiles-1) + ".npy")
-    dataheap = np.array([[datatemp],[dataheap],[data]])
+    # L2 = (numFiles-2)*L
+    # dataheap = np.reshape(data, (1,L2))
+    # # dataheap = np.hstack(dataheap)
+    # # datatemp = np.reshape(datatemp, (len(datatemp), 1))
+    
+    # data = np.load(filename + str(numFiles-1) + ".npy")
+    
+    # # print datatemp, dataheap[0], data
+    
+    # dataheap = np.hstack((datatemp,dataheap[0],data))
     
     holder = {}
     holder['dataheap'] = dataheap
@@ -81,13 +98,23 @@ def loadFromMat(filedir, Fs=10e3, rFs=256):
 
     return filedir
 
-def loadFromRaw(filedir, numFiles=6, type='slice2_', Fs=20e3):
+def loadFromRaw(filedir, numFiles=6, type='slice2_', Fs=20e3, saveMat=False):
     workingdir = tempfile.mkdtemp()
+    print "Smashing....\n"
     for i in xrange(numFiles):
         smash2(filedir, workingdir, type, i)
     
+    print "Merging....\n"
     for i in range(60):
+        print "\r%d of %d"%(i,60)
         file = workingdir + os.sep + "Electrode_" + str(electrodes[i]) + "_"
         holder = mergemat(file, numFiles, Fs)
         #f = open("{0}{2}{3}{2}Electrode_{1}_master".format(filedir, electrodes[i], os.sep, type) + ".mat", "w")
-        scipy.io.savemat("{0}{2}{3}{2}Electrode_{1}_master".format(filedir, electrodes[i], os.sep, type), holder)
+        if saveMat:
+            scipy.io.savemat("{0}{2}{3}{2}Electrode_{1}_master".format(filedir, electrodes[i], os.sep, type), holder)
+        else:
+            np.save("{0}{2}{3}{2}Electrode_{1}_master".format(filedir, electrodes[i], os.sep, type), holder['dataheap'])
+        holder = None
+        gc.collect()
+    print "\n Done!"
+    shutil.rmtree(workingdir)
