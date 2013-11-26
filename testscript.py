@@ -1,7 +1,6 @@
 import Importer
 import DataFormatter
 import DataAnalysis
-import collections
 import getopt
 import sys
 import h5py
@@ -12,10 +11,6 @@ from matplotlib import pyplot as plt
 class Usage(Exception):
     def __init__(self, msg):
         self.msg = msg
-
-
-def is_func(instance, func):
-    return isinstance(getattr(instance, func, None), collections.Callable)
 
 
 def main(argv=None):

@@ -47,3 +47,21 @@ def formatData(fileDir, name, *options):
     os.chdir(tmpdir)
     f.flush()
     f.close()
+
+
+def heirarchicalImport(root, name, *options):
+    pass
+
+
+def analyze(**kwargs):
+    fileDir = ""
+    name = ""
+    options = []
+    for (x, y) in kwargs:
+        if x == "fileDir":
+            fileDir = y
+        if x == "name":
+            name = y
+        if x == "options":
+            options = y
+    formatData(fileDir, name, options)
