@@ -32,9 +32,15 @@ def main(argv=None):
                 raise Usage(msg)
         for option, data in opts:
             if('-h' == option or '--help' == option):
-                print "LSCE test script. Usage: \"python testscript.py mat_source hdf5_dest" + \
-                    "\"\n\nSupply the following arguments to run pipeline:\n\n\tmat_source: " + \
-                    "The path to the raw .mat files to be imported.\n\thdf5_dest: the name to save hdf5 output file under"
+                print "LSCE test script. Usage: \"python testscript.py [--skip-importer] [--skip-formatter] [--skip-analysis]" +\
+                    " mat_source hdf5_dest" +\
+                    "\"\n\nSupply the following arguments to run pipeline:\n\n\tmat_source: " +\
+                    "The path to the raw .mat files to be imported.\n\thdf5_dest: the name to save hdf5 output file under" +\
+                    "\n\nAvailable modes:\n\t--skip-importer: skip importation step. Formatter wil still run using" +\
+                    " mat_source as src directory." +\
+                    "\n\t--skip-formatter: skip formatting step. Importer will use mat_source as usual. \n\t\t\t  Analysis will" +\
+                    " use hdf5_dest if it exists." + \
+                    "\n\t--skip-analysis: skip computation of analysis data. Formatter will still output to hdf5_dest. "
                 return
             if('--skip-importer' == option):
                 run_importer = False
