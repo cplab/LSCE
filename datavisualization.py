@@ -1,8 +1,8 @@
-#TODO: Fix labels initial position & hiding after scrolling
+#TODO: Fix labels updating slowly, integrate scrollbar in big plot, test w real data
 from numpy import arange, sin, pi, float, size
 
 import matplotlib
-matplotlib.use('WXAgg')
+#matplotlib.use('WXAgg')
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
@@ -12,14 +12,26 @@ import wx
 class MyFrame(wx.Frame):
     
     def __init__(self, parent, id):
+        
+        #Specify electrode numbers and electrodes that are missed
+        #In this specific implementation we have    
+        #8x8 set of electrodes, with corners missing (0,7,56,63)
         self.empty=[0,7,56,63]        
         self.electrodeX=8;
         self.electrodeY=8;
-        wx.Frame.__init__(self,parent, id, 'scrollable plot',
-                style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER,
-                size=(800, 400))
-        self.panel = wx.Panel(self, -1)
 
+        #Adjust Display Size            
+        tmp = wx.DisplaySize()
+        tmp2=(tmp[0],tmp[1]-100)
+        wx.Frame.__init__(self,parent, id, 'LSCE - Overall Plot',(0,0),
+                tmp2)
+        self.panel = wx.Panel(self, -1)
+        self.dimensions = self.GetSize()        
+        self.xoffset = 50
+        self.yoffset = 100 
+        self.labelwidth = 140
+        
+        #canvas, graphs, scrollbar
         self.fig = Figure((5, 4), 75)
         self.canvas = FigureCanvasWxAgg(self.panel, -1, self.fig)
         self.scroll_range = 400
@@ -28,16 +40,16 @@ class MyFrame(wx.Frame):
         self.graphs = []                                 
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.canvas, -1, wx.EXPAND)
-
+        #print "beforefit"+self.GetSize().__repr__()
         self.panel.SetSizer(sizer)
         self.panel.Fit()
-
+     
         self.init_data()
         self.init_plot()
-
-        self.canvas.Bind(wx.EVT_SCROLLWIN, self.OnScrollEvt)
-        self.canvas.mpl_connect('button_press_event',self.onclick)
+        self.Layout()
         
+        self.canvas.Bind(wx.EVT_SCROLLWIN, self.OnScrollEvt)
+        self.canvas.mpl_connect('button_press_event',self.onclick)   
 
     def init_data(self):
 
@@ -49,7 +61,7 @@ class MyFrame(wx.Frame):
         # Extents of data sequence: 
         self.i_min = 0
         self.i_max = len(self.t)
-
+        
         # Size of plot window:       
         self.i_window = 100
 
@@ -59,6 +71,18 @@ class MyFrame(wx.Frame):
 
     def init_plot(self):
         
+        #Start Time End Time Label Positioning
+        self.label1x=self.xoffset
+        self.labely=self.dimensions[1]-self.yoffset
+        self.label2x=self.dimensions[0]-self.xoffset-self.labelwidth       
+        
+        #Start Time End Time Labels        
+        self.startTime = wx.TextCtrl(self.panel, value="Start Time: "+
+            self.i_start.__repr__(), pos=(self.label1x, self.labely), size=(self.labelwidth,-1))
+        self.endTime = wx.TextCtrl(self.panel, value="End Time: "+
+            self.i_end.__repr__(), pos=(self.label2x, self.labely), size=(self.labelwidth,-1))        
+        
+        #creating each sub plot
         self.axes=[]
         self.graphs = []
         for j in range (64):
@@ -74,26 +98,10 @@ class MyFrame(wx.Frame):
             else:
                 self.axes.append(0)
                 self.graphs.append(0)
-        
-        #Start Time End Time Labels        
-        self.dimensions = self.canvas.get_width_height() 
-        self.label1x=self.dimensions[0]/4
-        self.labely=(self.dimensions[1]-50)
-        self.label2x=3*(self.dimensions[0]/4)        
-        
-        #Start Time End Time Label Positioning        
-        self.startTime = wx.TextCtrl(self.panel, value="Start Time: "+
-            self.i_start.__repr__(), pos=(self.label1x, self.labely), size=(140,-1))
-        self.endTime = wx.TextCtrl(self.panel, value="End Time: "+
-            self.i_end.__repr__(), pos=(self.label2x, self.labely), size=(140,-1))    
+        self.canvas.draw()        
+            
             
     def draw_plot(self):
-        
-        #Start End Labels position scaled according to window size
-        self.dimensions = self.canvas.get_width_height() 
-        self.label1x=self.dimensions[0]/4
-        self.labely=self.dimensions[1]-50
-        self.label2x=3*(self.dimensions[0]/4)
         
         # Adjust plot limits:
         for i in range (64):
@@ -106,13 +114,12 @@ class MyFrame(wx.Frame):
                 self.axes[i].set_ylim((min(self.x[self.i_start:self.i_end]),
                             max(self.x[self.i_start:self.i_end])))
         
-        #Update Start/End Labels                   
-        self.startTime.value="Start Time: " + self.i_start.__repr__()
-        self.endTime.value="End Time: " + self.i_end.__repr__()
-        
-        # Redraw:                  
+        # Redraw:     
+                  
+        self.startTime.ChangeValue("Start Time: " + self.i_start.__repr__())
+        self.endTime.ChangeValue("End Time: " + self.i_end.__repr__())
         self.canvas.draw()
-
+   
     def OnScrollEvt(self, event):
                 
         self.canvas.SetScrollPos(wx.HORIZONTAL, event.GetPosition(), True)
@@ -131,8 +138,20 @@ class MyFrame(wx.Frame):
                     fig2 = plt.figure()
                     ax_single = fig2.add_subplot(111)
                     #input in data ....
-                    fig2.canvas.set_window_title('Plot %d' %(i+1))
+                    
+                    #Plot Naming According to Electrode Position
+                    if (i+1)%self.electrodeX != 0 :
+                        rowno = ((i+1)/self.electrodeX)+1
+                    else:
+                        rowno=(i+1)/self.electrodeX
+                    if (i+1)%self.electrodeX ==0 :
+                        colno=self.electrodeX
+                    else:
+                        colno= (i+1)%self.electrodeX
+                    fig2.canvas.set_window_title('Plot '+ rowno.__repr__() + 
+                        " x "+colno.__repr__())
                     fig2.show()
+                    
                     break                
             i+=1
 
