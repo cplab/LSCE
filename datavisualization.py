@@ -1,25 +1,27 @@
-#TODO: Fix labels updating slowly, integrate scrollbar in big plot, test w real data
+#TODO: integrate scrollbar in big plot, implement real data
 from numpy import arange, sin, pi, float, size
-
+import datetime
 import matplotlib
-#matplotlib.use('WXAgg')
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
-
 import wx
 
 class MyFrame(wx.Frame):
     
-    def __init__(self, parent, id):
+    """
+    Creates a GUI class that displays data for an 8x8 set of electrodes
+    with the corners missing. 
+    """
+    def __init__(self, parent, id, data=42):
         
         #Specify electrode numbers and electrodes that are missed
         #In this specific implementation we have    
         #8x8 set of electrodes, with corners missing (0,7,56,63)
         self.empty=[0,7,56,63]        
-        self.electrodeX=8;
-        self.electrodeY=8;
-
+        self.electrodeX=8
+        self.electrodeY=8
+        
         #Adjust Display Size            
         tmp = wx.DisplaySize()
         tmp2=(tmp[0],tmp[1]-100)
@@ -40,15 +42,16 @@ class MyFrame(wx.Frame):
         self.graphs = []                                 
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.canvas, -1, wx.EXPAND)
-        #print "beforefit"+self.GetSize().__repr__()
         self.panel.SetSizer(sizer)
         self.panel.Fit()
-     
+        self.lastupdate=datetime.datetime.utcnow()
         self.init_data()
         self.init_plot()
         self.Layout()
         
-        self.canvas.Bind(wx.EVT_SCROLLWIN, self.OnScrollEvt)
+        #Bind Events, Scrollbar & Button Press
+        self.canvas.Bind(wx.EVT_SCROLLWIN_THUMBTRACK, self.OnScrollEvt)
+        self.canvas.Bind(wx.EVT_SCROLLWIN_THUMBRELEASE, self.OnScrollStop)
         self.canvas.mpl_connect('button_press_event',self.onclick)   
 
     def init_data(self):
@@ -114,19 +117,23 @@ class MyFrame(wx.Frame):
                 self.axes[i].set_ylim((min(self.x[self.i_start:self.i_end]),
                             max(self.x[self.i_start:self.i_end])))
         
-        # Redraw:     
-                  
-        self.startTime.ChangeValue("Start Time: " + self.i_start.__repr__())
-        self.endTime.ChangeValue("End Time: " + self.i_end.__repr__())
+        # Redraw:
         self.canvas.draw()
+        self.startTime.Refresh()
+        self.endTime.Refresh()
    
     def OnScrollEvt(self, event):
-                
+        if((datetime.datetime.utcnow()-self.lastupdate).microseconds>250000):
+            self.draw_plot()
+            self.lastupdate = datetime.datetime.utcnow()
         self.canvas.SetScrollPos(wx.HORIZONTAL, event.GetPosition(), True)
-        
+        self.startTime.ChangeValue("Start Time: " + self.i_start.__repr__())
+        self.endTime.ChangeValue("End Time: " + self.i_end.__repr__())
         # Update the indices of the plot:
         self.i_start = self.i_min + event.GetPosition()
         self.i_end = self.i_min + self.i_window + event.GetPosition()
+    
+    def OnScrollStop(self, event):
         self.draw_plot()
     
     def onclick(self, event):
@@ -162,6 +169,10 @@ class MyApp(wx.App):
         self.SetTopWindow(self.frame)
         return True
 
-if __name__ == '__main__':
-    app = MyApp()
+def analyze8x8data(data):
+    app = MyApp()    
+    app.frame.data=data    
     app.MainLoop()
+
+if __name__ == '__main__':
+    analyze8x8data(42)
