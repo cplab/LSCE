@@ -50,7 +50,7 @@ class MyFrame(wx.Frame):
         self.panel.SetSizer(sizer)
         self.panel.Fit()
         self.lastupdate=datetime.datetime.utcnow()
-        self.init_data(data)
+        self.init_data(electrodeData)
         self.init_plot()
         self.Layout()
         
@@ -62,7 +62,14 @@ class MyFrame(wx.Frame):
     """
     Parses data to be fed into visualization. 
     """
-    def init_data(self, data):
+    def init_data(self, data, index):
+        
+        self.xVal=[]
+        self.yVal=[]
+        
+        for i in range data[index].len
+            self.xVal.append(data[index][i][0]
+            self.yVal.append(data[index][i][1]
 
         # Generate some data to plot:
         self.dt = 0.01
@@ -99,12 +106,14 @@ class MyFrame(wx.Frame):
         #creating each sub plot
         self.axes=[]
         self.graphs = []
-        for j in range (64):
+        for j in range (self.electrodeX*self.electrodeY):
             if j not in self.empty:
                 self.axes.append(self.fig.add_subplot(self.electrodeX,self.electrodeY,j+1))
           
                 self.axes[j].yaxis.set_major_locator(matplotlib.ticker.NullLocator())
                 self.axes[j].xaxis.set_major_locator(matplotlib.ticker.NullLocator())
+                
+                
                 
                 self.graphs.append(
                       self.axes[j].plot(self.t[self.i_start:self.i_end],
