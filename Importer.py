@@ -45,18 +45,26 @@ def smash2(filedir, workingdir, type, fileNum):
 
 def mergemat(filename, numFiles, Fs):
     #apprently, the first and last has different sizes
-    # datatemp = np.load(filename+"0.npy")
+    datatemp = np.load(filename+"0.npy")
     
     # L = (2*60)*Fs
     
     # data = np.zeros((L,numFiles-2))
     
-    dataheap = []
-    
-    for i in range(numFiles):
-        # data[:,i] = np.load(filename + str(i+1)+".npy")
-        dataheap = np.append(dataheap, np.load(filename + str(i)+".npy"))
-    
+    dataheap = np.zeros((datatemp.size * numFiles,1))
+    datatemp.resize((datatemp.size,1))
+    dataheap[0:datatemp.size] = datatemp
+    index = datatemp.size
+    for i in xrange(numFiles-1):
+        temp = np.load(filename + str(i+1)+".npy")
+        if index+temp.size>=dataheap.size:
+            dataheap.resize((index+temp.size, 1))
+            #print "resizing"
+        temp.resize((temp.size,1))
+        dataheap[index:index+temp.size] = temp
+        index = index + temp.size
+        #dataheap = np.append(dataheap, np.load(filename + str(i)+".npy"))
+    #print dataheap.size
     # L2 = (numFiles-2)*L
     # dataheap = np.reshape(data, (1,L2))
     # # dataheap = np.hstack(dataheap)

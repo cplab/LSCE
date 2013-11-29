@@ -1,4 +1,4 @@
-#TODO: integrate scrollbar in big plot, implement real data, customize graph window
+#TODO: integrate scrollbar in big plot, implement real data
 from numpy import arange, sin, pi, float, size
 import datetime
 import matplotlib
@@ -17,7 +17,7 @@ class MyFrame(wx.Frame):
     Zoom in View: Scrollable data for a single electrode is displayed
     with MatPlotLib options such as saving data 
     """
-    def __init__(self, parent, id, data=42):
+    def __init__(self, parent, id, data):
         
         #Specify electrode numbers and electrodes that are missed
         #In this specific implementation we have    
@@ -25,6 +25,7 @@ class MyFrame(wx.Frame):
         self.empty=[0,7,56,63]        
         self.electrodeX=8
         self.electrodeY=8
+        self.electrodeData = data
         
         #Adjust Display Size            
         tmp = wx.DisplaySize()
@@ -49,7 +50,7 @@ class MyFrame(wx.Frame):
         self.panel.SetSizer(sizer)
         self.panel.Fit()
         self.lastupdate=datetime.datetime.utcnow()
-        self.init_data()
+        self.init_data(electrodeData)
         self.init_plot()
         self.Layout()
         
@@ -61,7 +62,14 @@ class MyFrame(wx.Frame):
     """
     Parses data to be fed into visualization. 
     """
-    def init_data(self):
+    def init_data(self, data, index):
+        
+        self.xVal=[]
+        self.yVal=[]
+        
+        for i in range data[index].len
+            self.xVal.append(data[index][i][0]
+            self.yVal.append(data[index][i][1]
 
         # Generate some data to plot:
         self.dt = 0.01
@@ -98,12 +106,14 @@ class MyFrame(wx.Frame):
         #creating each sub plot
         self.axes=[]
         self.graphs = []
-        for j in range (self.electrodeX * self.electrodeY):
+        for j in range (self.electrodeX*self.electrodeY):
             if j not in self.empty:
                 self.axes.append(self.fig.add_subplot(self.electrodeX,self.electrodeY,j+1))
           
                 self.axes[j].yaxis.set_major_locator(matplotlib.ticker.NullLocator())
                 self.axes[j].xaxis.set_major_locator(matplotlib.ticker.NullLocator())
+                
+                
                 
                 self.graphs.append(
                       self.axes[j].plot(self.t[self.i_start:self.i_end],
@@ -119,7 +129,7 @@ class MyFrame(wx.Frame):
     def draw_plot(self):
         
         # Adjust plot limits:
-        for i in range (self.electrodeX*self.electrodeY):
+        for i in range (64):
             if i not in self.empty:
             # Update data in plot:
                 self.graphs[i].set_xdata(self.t[self.i_start:self.i_end])
@@ -166,16 +176,12 @@ class MyFrame(wx.Frame):
         
         #loop through all plots to check which one was clicked
         i=0
-        while i < self.electrodeX*self.electrodeY:
+        while i < 64:
             if i not in self.empty:
                 if event.inaxes == self.axes[i]:
                     fig2 = plt.figure()
                     ax_single = fig2.add_subplot(111)
-                    
-                    #input in data and graph section/ limits
-                    ax_single.plot(self.t, self.x, 'yo-')
-                    ax_single.axis([0,1,-1,1])
-                    ax_single.set_autoscale_on(False)
+                    #input in data ....
                     
                     #Plot Naming According to Electrode Position
                     if (i+1)%self.electrodeX != 0 :
