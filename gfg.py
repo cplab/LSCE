@@ -17,7 +17,7 @@ class MyFrame(wx.Frame):
     Zoom in View: Scrollable data for a single electrode is displayed
     with MatPlotLib options such as saving data 
     """
-    def __init__(self, parent, id, data=42):
+    def __init__(self, parent, id, data):
         
         #Specify electrode numbers and electrodes that are missed
         #In this specific implementation we have    
@@ -25,6 +25,7 @@ class MyFrame(wx.Frame):
         self.empty=[0,7,56,63]        
         self.electrodeX=8
         self.electrodeY=8
+        self.electrodeData = data
         
         #Adjust Display Size            
         tmp = wx.DisplaySize()
@@ -49,7 +50,7 @@ class MyFrame(wx.Frame):
         self.panel.SetSizer(sizer)
         self.panel.Fit()
         self.lastupdate=datetime.datetime.utcnow()
-        self.init_data()
+        self.init_data(data)
         self.init_plot()
         self.Layout()
         
@@ -61,7 +62,7 @@ class MyFrame(wx.Frame):
     """
     Parses data to be fed into visualization. 
     """
-    def init_data(self):
+    def init_data(self, data):
 
         # Generate some data to plot:
         self.dt = 0.01
