@@ -1,4 +1,4 @@
-#TODO: integrate scrollbar in big plot, implement real data
+#TODO: integrate scrollbar in big plot, implement real data, customize graph window
 from numpy import arange, sin, pi, float, size
 import datetime
 import matplotlib
@@ -98,7 +98,7 @@ class MyFrame(wx.Frame):
         #creating each sub plot
         self.axes=[]
         self.graphs = []
-        for j in range (64):
+        for j in range (self.electrodeX * self.electrodeY):
             if j not in self.empty:
                 self.axes.append(self.fig.add_subplot(self.electrodeX,self.electrodeY,j+1))
           
@@ -119,7 +119,7 @@ class MyFrame(wx.Frame):
     def draw_plot(self):
         
         # Adjust plot limits:
-        for i in range (64):
+        for i in range (self.electrodeX*self.electrodeY):
             if i not in self.empty:
             # Update data in plot:
                 self.graphs[i].set_xdata(self.t[self.i_start:self.i_end])
@@ -166,12 +166,16 @@ class MyFrame(wx.Frame):
         
         #loop through all plots to check which one was clicked
         i=0
-        while i < 64:
+        while i < self.electrodeX*self.electrodeY:
             if i not in self.empty:
                 if event.inaxes == self.axes[i]:
                     fig2 = plt.figure()
                     ax_single = fig2.add_subplot(111)
-                    #input in data ....
+                    
+                    #input in data and graph section/ limits
+                    ax_single.plot(self.t, self.x, 'yo-')
+                    ax_single.axis([0,1,-1,1])
+                    ax_single.set_autoscale_on(False)
                     
                     #Plot Naming According to Electrode Position
                     if (i+1)%self.electrodeX != 0 :
