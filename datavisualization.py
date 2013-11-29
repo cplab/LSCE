@@ -12,6 +12,10 @@ class MyFrame(wx.Frame):
     """
     Creates a GUI class that displays data for an 8x8 set of electrodes
     with the corners missing. 
+    Main View: Scrollable data for each electrode is displayed according
+    to the placement of electrodes in the 8x8 arrangement
+    Zoom in View: Scrollable data for a single electrode is displayed
+    with MatPlotLib options such as saving data 
     """
     def __init__(self, parent, id, data=42):
         
@@ -54,6 +58,9 @@ class MyFrame(wx.Frame):
         self.canvas.Bind(wx.EVT_SCROLLWIN_THUMBRELEASE, self.OnScrollStop)
         self.canvas.mpl_connect('button_press_event',self.onclick)   
 
+    """
+    Parses data to be fed into visualization. 
+    """
     def init_data(self):
 
         # Generate some data to plot:
@@ -72,6 +79,9 @@ class MyFrame(wx.Frame):
         self.i_start = 0
         self.i_end = self.i_start + self.i_window
 
+    """
+    Creates 8x8 Data Plots
+    """
     def init_plot(self):
         
         #Start Time End Time Label Positioning
@@ -103,7 +113,9 @@ class MyFrame(wx.Frame):
                 self.graphs.append(0)
         self.canvas.draw()        
             
-            
+    """
+    Updates the section of data displayed according to scrolling event
+    """
     def draw_plot(self):
         
         # Adjust plot limits:
@@ -121,23 +133,38 @@ class MyFrame(wx.Frame):
         self.canvas.draw()
         self.startTime.Refresh()
         self.endTime.Refresh()
-   
+        
+    """
+    Handles Graph Scrolling
+    """
     def OnScrollEvt(self, event):
+        
         if((datetime.datetime.utcnow()-self.lastupdate).microseconds>250000):
             self.draw_plot()
             self.lastupdate = datetime.datetime.utcnow()
+        
+        #Update Scrollbar & labels
         self.canvas.SetScrollPos(wx.HORIZONTAL, event.GetPosition(), True)
         self.startTime.ChangeValue("Start Time: " + self.i_start.__repr__())
         self.endTime.ChangeValue("End Time: " + self.i_end.__repr__())
+        
         # Update the indices of the plot:
         self.i_start = self.i_min + event.GetPosition()
         self.i_end = self.i_min + self.i_window + event.GetPosition()
     
+    """
+    Handles Graph Scrolling
+    """
     def OnScrollStop(self, event):
         self.draw_plot()
     
+    """
+    When a graph is clicked on, handles the creation of a zoomed in 
+    view of that graph (Zoom in View) 
+    """
     def onclick(self, event):
-        #print "clicked"
+        
+        #loop through all plots to check which one was clicked
         i=0
         while i < 64:
             if i not in self.empty:
