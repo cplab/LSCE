@@ -38,12 +38,16 @@ def formatData(fileDir, name, conf="config.ini", *options):
     os.chdir(fileDir)
     print "Beginning data format of existing npy files."
     count = 0
+    #To give the user a better experience, count the number of files he/she will have to wait through
+    #before the job is complete
     for files in os.listdir("."):
         if(files.endswith(".npy")):
             count = count + 1
     i = 0
     for files in os.listdir("."):
         if(files.endswith(".npy")):
+            #For each numpy file in the directory, read it into active memory, write it to the hdf5 file,
+            #and then dump the in-memory copy. 
             i = i + 1
             print "Formatting file ("+i.__repr__()+"/"+count.__repr__()+"), \""+files+"\"..."
             tmp = np.load(files)
@@ -52,6 +56,9 @@ def formatData(fileDir, name, conf="config.ini", *options):
                 dset = data_dir.create_dataset(conflict_name, data=tmp)
             else:
                 dset = data_dir.create_dataset(files[0:files.index(".npy")], data=tmp)
+
+            #Create the special attributes "shape" and "dtype" for each dataset. These are important
+            #for some data analysis functions.
             dset.attrs.create("shape", np.shape(tmp))
             dset.attrs.create("dtype", tmp.dtype.__repr__())
             numsets = data_dir.attrs.get("count")
