@@ -157,7 +157,7 @@ class MyFrame(wx.Frame):
         Handles Graph Scrolling
         """
         
-        if((datetime.datetime.utcnow()-self.lastupdate).microseconds>250000):
+        if((datetime.datetime.utcnow()-self.lastupdate).microseconds>750000):
             self.draw_plot()
             self.lastupdate = datetime.datetime.utcnow()
         
@@ -197,8 +197,8 @@ class MyFrame(wx.Frame):
                     ax_single.plot(self.t, self.data[i-arrayoffset], 'yo-')
                     ax_single.set_xlim([self.i_start/self.samprate,self.i_end/self.samprate])
                     ax_single.set_autoscale_on(False)
-                    ax_single.ylabel('Milivolts')
-                    ax_single.xlabel('Time in Seconds')
+                    ax_single.set_ylabel('Milivolts')
+                    ax_single.set_xlabel('Time in Seconds')
 
                     #Plot Naming According to Electrode Position
                     if (i+1)%self.electrodeX != 0 :
