@@ -101,21 +101,23 @@ def loadFromRaw(filedir, numFiles=6, type='slice2_', Fs=20e3, saveMat=False):
 
     """
     workingdir = tempfile.mkdtemp()
-    print "Smashing....\n"
-    for i in xrange(numFiles):
-        __smash2(filedir, workingdir, type, i)
-    
-    print "Merging....\n"
-    for i in range(60):
-        print "\r%d of %d"%(i,60)
-        file = workingdir + os.sep + "Electrode_" + str(electrodes[i]) + "_"
-        holder = __mergemat(file, numFiles, Fs)
-        #f = open("{0}{2}{3}{2}Electrode_{1}_master".format(filedir, electrodes[i], os.sep, type) + ".mat", "w")
-        if saveMat:
-            scipy.io.savemat("{0}{2}{3}{2}Electrode_{1}_master".format(filedir, electrodes[i], os.sep, type), holder)
-        else:
-            np.save("{0}{2}{3}{2}Electrode_{1}_master".format(filedir, electrodes[i], os.sep, type), holder['dataheap'])
-        holder = None
-        gc.collect()
-    print "\nDone!"
-    shutil.rmtree(workingdir)
+    try:
+        print "Smashing....\n"
+        for i in xrange(numFiles):
+            __smash2(filedir, workingdir, type, i)
+        
+        print "Merging....\n"
+        for i in range(60):
+            print "\r%d of %d"%(i,60)
+            file = workingdir + os.sep + "Electrode_" + str(electrodes[i]) + "_"
+            holder = __mergemat(file, numFiles, Fs)
+            #f = open("{0}{2}{3}{2}Electrode_{1}_master".format(filedir, electrodes[i], os.sep, type) + ".mat", "w")
+            if saveMat:
+                scipy.io.savemat("{0}{2}{3}{2}Electrode_{1}_master".format(filedir, electrodes[i], os.sep, type), holder)
+            else:
+                np.save("{0}{2}{3}{2}Electrode_{1}_master".format(filedir, electrodes[i], os.sep, type), holder['dataheap'])
+            holder = None
+            gc.collect()
+        print "\nDone!"
+    finally:
+        shutil.rmtree(workingdir)
