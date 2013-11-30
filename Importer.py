@@ -19,7 +19,7 @@ def smash2(filedir, workingdir, type, fileNum):
     savedir = filedir + os.sep + type
     filename = savedir+"%04d"%(fileNum)+".raw"
     print filename
-    fid = file(filename)
+    fid = file(filename, 'rb')
     #fileSize = os.stat(filename).st_size
     #data = array.array("H")
     #data.fromfile(fid, fileSize/2)
@@ -31,7 +31,6 @@ def smash2(filedir, workingdir, type, fileNum):
     #convertedData = [(x-32768)*0.0104 for x in data]
     #data -= 32768
     #data *= 0.0104
-    
     numelec = 60
     #out = []
     for i in range(numelec):
@@ -63,18 +62,6 @@ def mergemat(filename, numFiles, Fs):
         temp.resize((temp.size,1))
         dataheap[index:index+temp.size] = temp
         index = index + temp.size
-        #dataheap = np.append(dataheap, np.load(filename + str(i)+".npy"))
-    #print dataheap.size
-    # L2 = (numFiles-2)*L
-    # dataheap = np.reshape(data, (1,L2))
-    # # dataheap = np.hstack(dataheap)
-    # # datatemp = np.reshape(datatemp, (len(datatemp), 1))
-    
-    # data = np.load(filename + str(numFiles-1) + ".npy")
-    
-    # # print datatemp, dataheap[0], data
-    
-    # dataheap = np.hstack((datatemp,dataheap[0],data))
     
     holder = {}
     holder['dataheap'] = dataheap
