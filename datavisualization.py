@@ -17,7 +17,7 @@ class MyFrame(wx.Frame):
     Zoom in View: Scrollable data for a single electrode is displayed
     with MatPlotLib options such as saving data 
     """
-    def __init__(self, parent, id, data=42):
+    def __init__(self, parent, id, data, time, samprate):
         
         #Specify electrode numbers and electrodes that are missed
         #In this specific implementation we have    
@@ -25,6 +25,11 @@ class MyFrame(wx.Frame):
         self.empty=[0,7,56,63]        
         self.electrodeX=8
         self.electrodeY=8
+        
+        #Data Variables        
+        self.data=data
+        self.time=time
+        self.samprate=samprate
         
         #Adjust Display Size            
         tmp = wx.DisplaySize()
@@ -40,8 +45,9 @@ class MyFrame(wx.Frame):
         #canvas, graphs, scrollbar
         self.fig = Figure((5, 4), 75)
         self.canvas = FigureCanvasWxAgg(self.panel, -1, self.fig)
-        self.scroll_range = 400
-        self.canvas.SetScrollbar(wx.HORIZONTAL, 0, 5,
+        self.scroll_range = len(data[0])-time*samprate + 1
+        print self.scroll_range
+        self.canvas.SetScrollbar(wx.HORIZONTAL, 0, max(1,self.scroll_range/20),
                                  self.scroll_range)
         self.graphs = []                                 
         sizer = wx.BoxSizer(wx.VERTICAL)
@@ -63,18 +69,17 @@ class MyFrame(wx.Frame):
     """
     def init_data(self):
 
-        # Generate some data to plot:
-        self.dt = 0.01
-        self.t = arange(0,5,self.dt)
-        self.x = sin(2*pi*self.t)
-
+        # Generate x axis limits and data intervals:
+        self.dt = 1.0/self.samprate
+        self.t = arange(0,float(len(self.data[0]))/self.samprate,self.dt)
+        print "There are "+self.t.__repr__()+" time series, and "+self.data[0].__repr__()+" data entries."
         # Extents of data sequence: 
         self.i_min = 0
         self.i_max = len(self.t)
         
         # Size of plot window:       
-        self.i_window = 100
-
+        self.i_window = self.time*self.samprate
+        print "Window size is "+self.i_window.__repr__()+" entries."
         # Indices of data interval to be plotted:
         self.i_start = 0
         self.i_end = self.i_start + self.i_window
@@ -105,9 +110,10 @@ class MyFrame(wx.Frame):
                 self.axes[j].yaxis.set_major_locator(matplotlib.ticker.NullLocator())
                 self.axes[j].xaxis.set_major_locator(matplotlib.ticker.NullLocator())
                 
+                self.dataCurrent = self.data[0]
                 self.graphs.append(
                       self.axes[j].plot(self.t[self.i_start:self.i_end],
-                                 self.x[self.i_start:self.i_end])[0])
+                                 self.data[0][self.i_start:self.i_end])[0])
             else:
                 self.axes.append(0)
                 self.graphs.append(0)
@@ -123,11 +129,11 @@ class MyFrame(wx.Frame):
             if i not in self.empty:
             # Update data in plot:
                 self.graphs[i].set_xdata(self.t[self.i_start:self.i_end])
-                self.graphs[i].set_ydata(self.x[self.i_start:self.i_end])
+                self.graphs[i].set_ydata(self.data[0][self.i_start:self.i_end])
                 self.axes[i].set_xlim((min(self.t[self.i_start:self.i_end]),
                            max(self.t[self.i_start:self.i_end])))
-                self.axes[i].set_ylim((min(self.x[self.i_start:self.i_end]),
-                            max(self.x[self.i_start:self.i_end])))
+                self.axes[i].set_ylim((min(self.data[0][self.i_start:self.i_end]),
+                            max(self.data[0][self.i_start:self.i_end])))
         
         # Redraw:
         self.canvas.draw()
@@ -145,8 +151,8 @@ class MyFrame(wx.Frame):
         
         #Update Scrollbar & labels
         self.canvas.SetScrollPos(wx.HORIZONTAL, event.GetPosition(), True)
-        self.startTime.ChangeValue("Start Time: " + self.i_start.__repr__())
-        self.endTime.ChangeValue("End Time: " + self.i_end.__repr__())
+        self.startTime.ChangeValue("Start Time: " + (self.i_start*self.samprate).__repr__())
+        self.endTime.ChangeValue("End Time: " + (self.i_end*self.samprate).__repr__())
         
         # Update the indices of the plot:
         self.i_start = self.i_min + event.GetPosition()
@@ -173,8 +179,8 @@ class MyFrame(wx.Frame):
                     ax_single = fig2.add_subplot(111)
                     
                     #input in data and graph section/ limits
-                    ax_single.plot(self.t, self.x, 'yo-')
-                    ax_single.axis([0,1,-1,1])
+                    ax_single.plot(self.t, self.data[0], 'yo-')
+                    ax_single.set_xlim([0,self.time])
                     ax_single.set_autoscale_on(False)
                     
                     #Plot Naming According to Electrode Position
@@ -193,17 +199,23 @@ class MyFrame(wx.Frame):
                     break                
             i+=1
 
-class MyApp(wx.App):
-    def OnInit(self):
-        self.frame = MyFrame(parent=None,id=-1)
-        self.frame.Show()
-        self.SetTopWindow(self.frame)
-        return True
 
-def analyze8x8data(data):
-    app = MyApp()    
-    app.frame.data=data    
-    app.MainLoop()
+class MyApp(wx.App):
+#    def _init_(self):
+#        self.data = 42
+#        super(MyApp, self)
+   def OnInit(self):
+       #self.frame = MyFrame(parent=None,id=-1, data=self.data)
+       #self.frame.Show()
+       #self.SetTopWindow(self.frame)
+       return True
+
+def analyze8x8data(data, time=1.1, samprate=2):
+   app = MyApp()
+   frame = MyFrame(parent=None,id=-1, data=data, time=time, samprate=samprate)
+   frame.Show()
+   app.SetTopWindow(frame)
+   app.MainLoop()
 
 if __name__ == '__main__':
-    analyze8x8data(42)
+   analyze8x8data([[1,2,1,4],[2,3,4,5]])
