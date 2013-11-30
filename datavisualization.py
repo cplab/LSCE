@@ -19,7 +19,6 @@ class MyFrame(wx.Frame):
     with MatPlotLib options such as saving data 
     """
     def __init__(self, parent, id, data, time, samprate):
-        
         #Specify electrode numbers and electrodes that are missed
         #In this specific implementation we have    
         #8x8 set of electrodes, with corners missing (0,7,56,63)
@@ -192,7 +191,7 @@ class MyFrame(wx.Frame):
                     
                     #input in data and graph section/ limits
                     ax_single.plot(self.t, self.data[i-arrayoffset], 'yo-')
-                    ax_single.set_xlim([0,self.time])
+                    ax_single.set_xlim([self.i_start/self.samprate,self.i_end/self.samprate])
                     ax_single.set_autoscale_on(False)
                     
                     #Plot Naming According to Electrode Position

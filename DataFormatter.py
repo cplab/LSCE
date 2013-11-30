@@ -85,6 +85,7 @@ def formatData(fileDir, name, conf="config.ini", *options):
     os.chdir(tmpdir)
     f.flush()
     f.close()
+    del f
 
 
 def formatwrapper(**kwargs):
