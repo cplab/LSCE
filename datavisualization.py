@@ -19,6 +19,7 @@ class MyFrame(wx.Frame):
     with MatPlotLib options such as saving data 
     """
     def __init__(self, parent, id, data, time, samprate):
+        
         #Specify electrode numbers and electrodes that are missed
         #In this specific implementation we have    
         #8x8 set of electrodes, with corners missing (0,7,56,63)
@@ -69,11 +70,12 @@ class MyFrame(wx.Frame):
         self.canvas.Bind(wx.EVT_SCROLLWIN_THUMBRELEASE, self.OnScrollStop)
         self.canvas.mpl_connect('button_press_event',self.onclick)   
 
-    """
-    Parses data to be fed into visualization. 
-    """
-    def init_data(self):
 
+    def init_data(self):
+        """
+        Parses data to be fed into visualization. 
+        """
+    
         # Generate x axis limits and data intervals:
         self.dt = 1.0/self.samprate
         self.t = arange(0,float(len(self.data[0]))/self.samprate,self.dt)
@@ -89,10 +91,11 @@ class MyFrame(wx.Frame):
         self.i_start = 0
         self.i_end = self.i_start + self.i_window
 
-    """
-    Creates 8x8 Data Plots
-    """
+
     def init_plot(self):
+        """
+        Creates 8x8 Data Plots
+        """
         
         #Start Time End Time Label Positioning
         self.label1x=self.xoffset
@@ -101,9 +104,9 @@ class MyFrame(wx.Frame):
         
         #Start Time End Time Labels        
         self.startTime = wx.TextCtrl(self.panel, value="Start Time: "+
-            (float(self.i_start)/self.samprate).__repr__(), pos=(self.label1x, self.labely), size=(self.labelwidth,-1))
+            (float(self.i_start)/self.samprate).__repr__()+"s", pos=(self.label1x, self.labely), size=(self.labelwidth,-1))
         self.endTime = wx.TextCtrl(self.panel, value="End Time: "+
-            (float(self.i_end)/self.samprate).__repr__(), pos=(self.label2x, self.labely), size=(self.labelwidth,-1))        
+            (float(self.i_end)/self.samprate).__repr__()+"s", pos=(self.label2x, self.labely), size=(self.labelwidth,-1))        
         
         #creating each sub plot
         self.axes=[]
@@ -125,11 +128,11 @@ class MyFrame(wx.Frame):
                 arrayoffset=arrayoffset+1
         self.canvas.draw()        
             
-    """
-    Updates the section of data displayed according to scrolling event
-    """
+   
     def draw_plot(self):
-        
+        """
+        Updates the section of data displayed according to scrolling event
+        """
         # Adjust plot limits:
         arrayoffset=0
         for i in range (self.electrodeX*self.electrodeY):
@@ -148,10 +151,11 @@ class MyFrame(wx.Frame):
         self.startTime.Refresh()
         self.endTime.Refresh()
         
-    """
-    Handles Graph Scrolling
-    """
+    
     def OnScrollEvt(self, event):
+        """
+        Handles Graph Scrolling
+        """
         
         if((datetime.datetime.utcnow()-self.lastupdate).microseconds>250000):
             self.draw_plot()
@@ -163,22 +167,22 @@ class MyFrame(wx.Frame):
         
         #Update Scrollbar & labels
         self.canvas.SetScrollPos(wx.HORIZONTAL, event.GetPosition(), True)
-        self.startTime.ChangeValue("Start Time: " + (float(self.i_start)/self.samprate).__repr__())
-        self.endTime.ChangeValue("End Time: " + (float(self.i_end)/self.samprate).__repr__())
-        
-       
+        self.startTime.ChangeValue("Start Time: " + (float(self.i_start)/self.samprate).__repr__()+"s")
+        self.endTime.ChangeValue("End Time: " + (float(self.i_end)/self.samprate).__repr__()+"s")     
     
-    """
-    Handles Graph Scrolling
-    """
+    
     def OnScrollStop(self, event):
+        """
+        Handles Graph Scrolling
+        """
         self.draw_plot()
     
-    """
-    When a graph is clicked on, handles the creation of a zoomed in 
-    view of that graph (Zoom in View) 
-    """
+    
     def onclick(self, event):
+        """
+        When a graph is clicked on, handles the creation of a zoomed in 
+        view of that graph (Zoom in View) 
+        """
         
         #loop through all plots to check which one was clicked
         i=0
@@ -193,7 +197,9 @@ class MyFrame(wx.Frame):
                     ax_single.plot(self.t, self.data[i-arrayoffset], 'yo-')
                     ax_single.set_xlim([self.i_start/self.samprate,self.i_end/self.samprate])
                     ax_single.set_autoscale_on(False)
-                    
+                    ax_single.ylabel('Milivolts')
+                    ax_single.xlabel('Time in Seconds')
+
                     #Plot Naming According to Electrode Position
                     if (i+1)%self.electrodeX != 0 :
                         rowno = ((i+1)/self.electrodeX)+1
@@ -212,22 +218,24 @@ class MyFrame(wx.Frame):
                 arrayoffset+=1               
             i+=1
 
+
 class MyApp(wx.App):
 
    def OnInit(self):
        return True
        
-"""
-Function which produces a visualization of 8x8 electrode data with a main
-view (graph of each electrode's data, arranged together according to the 
-electrode positions) and zoom in view (graph of single electrode data). 
-Data = 2D Array of y values to be plotted
-Time (in seconds) = the amount of time the graph should span in each window
-                    should be passed in as an integer
-Samprate = sampling rate, ie how many data samples per second
-          should be passed in as an integer
-"""
+
 def analyze8x8data(data, time=1, samprate=2):
+   """
+   Function which produces a visualization of 8x8 electrode data with a main
+   view (graph of each electrode's data, arranged together according to the 
+   electrode positions) and zoom in view (graph of single electrode data). 
+   Data = 2D Array of y values to be plotted
+   Time (in seconds) = the amount of time the graph should span in each window
+                    should be passed in as an integer
+   Samprate = sampling rate, ie how many data samples per second
+          should be passed in as an integer
+   """
    
    if not (type(time) is int):
        print "Your 'time' variable is incorrect. Time should be an integer"
@@ -242,15 +250,16 @@ def analyze8x8data(data, time=1, samprate=2):
    app.SetTopWindow(frame)
    app.MainLoop()
 
-"""
-Function which produces visualization of single electrode data. 
-Data = Array of y values to be plotted
-Time (in seconds) = the amount of time the graph should span in each window
-                    should be passed in as an integer
-Samprate = sampling rate, ie how many data samples per second
-        should be passed in as an integer
-"""   
+
 def analyzesingle(data, time, samprate):
+    """
+    Function which produces visualization of single electrode data. 
+    Data = Array of y values to be plotted
+    Time (in seconds) = the amount of time the graph should span in each window
+                    should be passed in as an integer
+    Samprate = sampling rate, ie how many data samples per second
+        should be passed in as an integer
+    """   
     
     if not (type(time) is int):
        print "Your 'time' variable is incorrect. Time should be an integer"
@@ -266,6 +275,9 @@ def analyzesingle(data, time, samprate):
     ax_single.plot(t, data, 'yo-')
     ax_single.set_xlim([0,time])
     ax_single.set_autoscale_on(False)
+    ax_single.ylabel('Milivolts')
+    ax_single.xlabel('Time in Seconds')
+
 
 if __name__ == '__main__':
    analyze8x8data([[1,2,1,4],[2,3,4,5]])
