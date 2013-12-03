@@ -34,11 +34,6 @@ class data_analysis(object):
         self.staged_dataset = None
         self.sampling_rate = 0
 
-    def data_initialized(self):
-        """Returns true or false depending on if the data initialized."""
-        return self.staged_dataset != None and self.sampling_rate > 0
-        # TODO: Change based on important data
-
     # Loaders
     def load_file(self, file_path):
         """Loads an HDF5 file. The HDF5 file must have been formatted by DataFormatter.
@@ -192,8 +187,14 @@ class data_analysis(object):
                            save(dataset_name) - A new dataset is created at that location for the analysis function to write to.
                            user_args(dictionary) - A dictionary of user supplied arguments.
         """
+        if self.staged_dataset is None:
+            print "There is no staged dataset. Analysis aborted."
+            return
         params = {'data': self.staged_dataset}
         if 'sampling_rate'in kwargs:
+            if self.sampling_rate == 0:
+                print "Sampling rate not set. Analysis aborted."
+                return
             params['sampling_rate'] = self.sampling_rate
         if 'save' in kwargs:
             try:
