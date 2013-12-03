@@ -53,7 +53,7 @@ def formatData(fileDir, name, conf="config.ini", *options):
             tmp = np.load(files)
             if(files[0:files.index(".npy")] in data_dir):
                 conflict_name = (files[0:files.index(".npy")] + "_conflicted_copy_" + timestamp())
-                dset = data_dir.create_dataset(conflict_name, data=tmp)
+                dset = data_dir.create_dataset(conflict_name, data=tmp, chunks=True)
             else:
                 dset = data_dir.create_dataset(files[0:files.index(".npy")], data=tmp)
 

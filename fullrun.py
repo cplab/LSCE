@@ -21,9 +21,6 @@ def main(argv=None):
     for dataset in tmp["raw_data"].keys():
     	data.append(tmp["raw_data"][dataset])
     	print tmp["raw_data"][dataset][0]
-    print data
-    print data[0][1][0]
-    print (data[0][1][0]+5).__repr__()
     datavisualization.analyze8x8data(data=data, samprate=1000, time=5)
     tmp.close()
 if __name__ == "__main__":
