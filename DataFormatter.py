@@ -55,7 +55,7 @@ def formatData(fileDir, name, conf="config.ini", *options):
                 conflict_name = (files[0:files.index(".npy")] + "_conflicted_copy_" + timestamp())
                 dset = data_dir.create_dataset(conflict_name, data=tmp, chunks=True)
             else:
-                dset = data_dir.create_dataset(files[0:files.index(".npy")], data=tmp)
+                dset = data_dir.create_dataset(files[0:files.index(".npy")], chunks=True, data=tmp)
 
             #Create the special attributes "shape" and "dtype" for each dataset. These are important
             #for some data analysis functions.

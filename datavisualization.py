@@ -194,10 +194,10 @@ class MyFrame(wx.Frame):
                     ax_single = fig2.add_subplot(111)
                     
                     #input in data and graph section/ limits
-                    ax_single.plot(self.t, self.data[i-arrayoffset], 'yo-')
+                    ax_single.plot(self.t, self.data[i-arrayoffset], 'b-')
                     ax_single.set_xlim([self.i_start/self.samprate,self.i_end/self.samprate])
                     ax_single.set_autoscale_on(False)
-                    ax_single.set_ylabel('Milivolts')
+                    ax_single.set_ylabel('Millivolts')
                     ax_single.set_xlabel('Time in Seconds')
 
                     #Plot Naming According to Electrode Position
@@ -251,7 +251,7 @@ def analyze8x8data(data, time=1, samprate=2):
    app.MainLoop()
 
 
-def analyzesingle(data, time, samprate):
+def analyzesingle(data, time1, time2, samprate, name="Data"):
     """
     Function which produces visualization of single electrode data. 
     Data = Array of y values to be plotted
@@ -261,23 +261,30 @@ def analyzesingle(data, time, samprate):
         should be passed in as an integer
     """   
     
-    if not (type(time) is int):
-       print "Your 'time' variable is incorrect. Time should be an integer"
-       raise ValueError
+    #if not (type(time) is int):
+    #   print "Your 'time' variable is incorrect. Time should be an integer"
+    #   raise ValueError
     if not(type(samprate) is int):
        print "Your 'samprate' variable is incorrect. Samprate should be an integer"
        raise ValueError
-    
     dt = 1.0/samprate
-    t = arange(0,float(len(data))/samprate,dt)        
+    windowsize = time2*samprate - time1*samprate
+    print "There are %f data points, at a rate of %d, so the range is 0-%f." % (len(data), samprate, float(len(data))/samprate)
+    #t = arange(0,float(len(data))/samprate,dt)
+    t = arange(time1,time2,dt)
     fig2 = plt.figure()
     ax_single = fig2.add_subplot(111)
-    ax_single.plot(t, data, 'yo-')
-    ax_single.set_xlim([0,time])
+    ax_single.plot(t, data[time1*samprate:time2*samprate], 'b-')
+    ax_single.set_xlim([time1, time2])
     ax_single.set_autoscale_on(False)
-    ax_single.ylabel('Milivolts')
-    ax_single.xlabel('Time in Seconds')
-
+    ax_single.set_ylabel('Millivolts')
+    ax_single.set_xlabel('Time in Seconds')
+    fig2.show()
+    print "Press Enter to continue..."
+    raw_input()
+    fig2.clf()
+    plt.close()
+    del t
 
 if __name__ == '__main__':
    analyze8x8data([[1,2,1,4],[2,3,4,5]])
