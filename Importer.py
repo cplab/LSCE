@@ -110,6 +110,8 @@ def loadFromRaw(filedir, numFiles=6, type='slice2_', Fs=20e3, saveMat=False):
         for i in range(60):
             print "\r%d of %d"%(i,60)
             file = workingdir + os.sep + "Electrode_" + str(electrodes[i]) + "_"
+            if (not (os.listdir(filedir).__contains__(type))):
+                os.mkdir(filedir+os.sep+type)
             holder = __mergemat(file, numFiles, Fs)
             #f = open("{0}{2}{3}{2}Electrode_{1}_master".format(filedir, electrodes[i], os.sep, type) + ".mat", "w")
             if saveMat:

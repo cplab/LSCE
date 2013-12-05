@@ -157,9 +157,9 @@ class MyFrame(wx.Frame):
         Handles Graph Scrolling
         """
         
-        if((datetime.datetime.utcnow()-self.lastupdate).microseconds>750000):
-            self.draw_plot()
-            self.lastupdate = datetime.datetime.utcnow()
+        #if((datetime.datetime.utcnow()-self.lastupdate).microseconds>750000):
+        #    self.draw_plot()
+        #    self.lastupdate = datetime.datetime.utcnow()
         
         # Update the indices of the plot:
         self.i_start = self.i_min + event.GetPosition()
@@ -186,8 +186,8 @@ class MyFrame(wx.Frame):
         
         #loop through all plots to check which one was clicked
         i=0
+        arrayoffset=0
         while i < self.electrodeX*self.electrodeY:
-            arrayoffset=0
             if i not in self.empty:
                 if event.inaxes == self.axes[i]:
                     fig2 = plt.figure()
@@ -215,7 +215,7 @@ class MyFrame(wx.Frame):
                     
                     break
             else: 
-                arrayoffset+=1               
+                arrayoffset+=1
             i+=1
 
 
