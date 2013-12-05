@@ -1,21 +1,13 @@
 import Importer
 import DataFormatter
 import datavisualization
-import getopt
 import sys
 import h5py
-import os
-from matplotlib import pyplot as plt
-
-
-class Usage(Exception):
-    def __init__(self, msg):
-        self.msg = msg
 
 
 def main(argv=None):
-    Importer.loadFromRaw("E:\\LSCE\\110112")
-    DataFormatter.formatData("E:\\LSCE\\110112\\slice2_", "fulldata")
+    Importer.loadFromRaw("E:\\LSCE\\Demo")
+    DataFormatter.formatData("E:\\LSCE\\Demo\\slice2_", "fulldata")
     tmp = h5py.File("fulldata.hdf5", "r+")
     data = []
     for dataset in tmp["raw_data"].keys():
