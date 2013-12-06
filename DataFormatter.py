@@ -25,7 +25,8 @@ def formatData(fileDir, name, conf="config.ini", *options):
                         '-a': open the hdf5 file in append mode, do not overwrite. Files with
                               name conflicts will have a timestamp appended to their name.
     """
-    #Decode launch options
+    #Decode launch options. Right now, there is only one option: -a opens the hdf file in read/write
+    #mode instead of overwriting the existing file.
     file_access_mode = 'r+' if ('-a' in options) else "w"
     f = h5py.File(name+".hdf5", file_access_mode)
     #Check if the given file already contains raw_data. If not, create it.
@@ -51,6 +52,7 @@ def formatData(fileDir, name, conf="config.ini", *options):
             i = i + 1
             print "Formatting file ("+i.__repr__()+"/"+count.__repr__()+"), \""+files+"\"..."
             tmp = np.load(files)
+            #Check for a naming conflict. For fresh HDF5 files, this should never happen
             if(files[0:files.index(".npy")] in data_dir):
                 conflict_name = (files[0:files.index(".npy")] + "_conflicted_copy_" + timestamp())
                 dset = data_dir.create_dataset(conflict_name, data=tmp, chunks=True)
@@ -63,10 +65,10 @@ def formatData(fileDir, name, conf="config.ini", *options):
             dset.attrs.create("dtype", tmp.dtype.__repr__())
             numsets = data_dir.attrs.get("count")
             if numsets is not None:
-                data_dir.attrs.modify("count", [numsets[0] + 1])
+                data_dir.attrs.modify("count", numsets + 1)
             else:
-                data_dir.attrs.modify("count", [1])
-    data_dir.attrs.modify("last_modified", [timestamp()])
+                data_dir.attrs.modify("count", 1)
+    data_dir.attrs.modify("last_modified", timestamp())
     #At this point, the raw datasets have each been imported from the .npy files.
     #We now read any metadata from the given configuration file.
     config = ConfigParser.SafeConfigParser(allow_no_value=True)

@@ -18,7 +18,7 @@ class MyFrame(wx.Frame):
     Zoom in View: Scrollable data for a single electrode is displayed
     with MatPlotLib options such as saving data 
     """
-    def __init__(self, parent, id, data, time, samprate):
+    def __init__(self, parent, id, data, time, samprate, resolution):
         
         #Specify electrode numbers and electrodes that are missed
         #In this specific implementation we have    
@@ -36,7 +36,8 @@ class MyFrame(wx.Frame):
         self.data=data
         self.time=time
         self.samprate=samprate
-        
+        self.resolution = resolution
+        self.stepsize = self.samprate * self.time / resolution
         #Adjust Display Size            
         tmp = wx.DisplaySize()
         tmp2=(tmp[0],tmp[1]-100)
@@ -120,8 +121,8 @@ class MyFrame(wx.Frame):
                 self.axes[j].xaxis.set_major_locator(matplotlib.ticker.NullLocator())
                 
                 self.graphs.append(
-                      self.axes[j].plot(self.t[self.i_start:self.i_end],
-                                 self.data[j-arrayoffset][self.i_start:self.i_end])[0])
+                      self.axes[j].plot(self.t[self.i_start:self.i_end:max(1,self.stepsize)],
+                                 self.data[j-arrayoffset][self.i_start:self.i_end:max(1,self.stepsize)])[0])
             else:
                 self.axes.append(0)
                 self.graphs.append(0)
@@ -138,12 +139,11 @@ class MyFrame(wx.Frame):
         for i in range (self.electrodeX*self.electrodeY):
             if i not in self.empty:
             # Update data in plot:
-                self.graphs[i].set_xdata(self.t[self.i_start:self.i_end])
-                self.graphs[i].set_ydata(self.data[i-arrayoffset][self.i_start:self.i_end])
-                self.axes[i].set_xlim((min(self.t[self.i_start:self.i_end]),
-                           max(self.t[self.i_start:self.i_end])))
-                self.axes[i].set_ylim((min(self.data[i-arrayoffset][self.i_start:self.i_end]),
-                            max(self.data[i-arrayoffset][self.i_start:self.i_end])))
+                self.graphs[i].set_xdata(self.t[self.i_start:self.i_end:max(1,self.stepsize)])
+                self.graphs[i].set_ydata(self.data[i-arrayoffset][self.i_start:self.i_end:max(1,self.stepsize)])
+                self.axes[i].set_xlim(self.t[self.i_start], self.t[self.i_end])
+                self.axes[i].set_ylim((min(self.data[i-arrayoffset][self.i_start:self.i_end:max(1,self.stepsize)]),
+                            max(self.data[i-arrayoffset][self.i_start:self.i_end:max(1,self.stepsize)])))
             else:
                 arrayoffset+=1
         # Redraw:
@@ -225,7 +225,7 @@ class MyApp(wx.App):
        return True
        
 
-def analyze8x8data(data, time=1, samprate=2):
+def analyze8x8data(data, time=1, samprate=2, resolution = 1000):
    """
    Function which produces a visualization of 8x8 electrode data with a main
    view (graph of each electrode's data, arranged together according to the 
@@ -245,7 +245,7 @@ def analyze8x8data(data, time=1, samprate=2):
        raise ValueError
        
    app = MyApp()
-   frame = MyFrame(parent=None,id=-1, data=data, time=time, samprate=samprate)
+   frame = MyFrame(parent=None,id=-1, data=data, time=time, samprate=samprate, resolution=resolution)
    frame.Show()
    app.SetTopWindow(frame)
    app.MainLoop()
