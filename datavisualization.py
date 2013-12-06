@@ -37,7 +37,7 @@ class MyFrame(wx.Frame):
         self.time=time
         self.samprate=samprate
         self.resolution = resolution
-        self.stepsize = self.samprate * self.time / resolution
+        self.stepsize = self.samprate / resolution
         #Adjust Display Size            
         tmp = wx.DisplaySize()
         tmp2=(tmp[0],tmp[1]-100)
