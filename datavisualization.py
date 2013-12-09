@@ -132,10 +132,14 @@ class MyFrame(wx.Frame):
         self.canvas.draw()        
             
    
-    def draw_plot(self):
+    def draw_plot(self, resAdj = 1.0):
         """
         Updates the section of data displayed according to scrolling event
+        resAdj: gives the fraction of the designated resolution to display at. ie 1 being the original resolution and 0.5 being half the resolution
         """
+        print self.stepsize
+        temp = self.stepsize
+        self.stepsize = int(self.stepsize/resAdj)
         # Adjust plot limits:
         arrayoffset=0
         for i in range (self.electrodeX*self.electrodeY):
@@ -148,6 +152,7 @@ class MyFrame(wx.Frame):
                             max(self.data[i-arrayoffset][self.i_start:self.i_end:max(1,self.stepsize)])))
             else:
                 arrayoffset+=1
+        self.stepsize = temp
         # Redraw:
         self.canvas.draw()
         self.startTime.Refresh()
@@ -159,9 +164,9 @@ class MyFrame(wx.Frame):
         Handles Graph Scrolling
         """
         
-        #if((datetime.datetime.utcnow()-self.lastupdate).microseconds>750000):
-        #    self.draw_plot()
-        #    self.lastupdate = datetime.datetime.utcnow()
+        if((datetime.datetime.utcnow()-self.lastupdate).microseconds>500000):
+            self.draw_plot(0.05)
+            self.lastupdate = datetime.datetime.utcnow()
         
         # Update the indices of the plot:
         self.i_start = self.i_min + event.GetPosition()
