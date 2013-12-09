@@ -7,6 +7,8 @@ from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 import wx
+import h5py
+import sys
 
 class MyFrame(wx.Frame):
     
@@ -272,9 +274,10 @@ def analyzesingle(data, time1, time2, samprate, name="Data"):
     print "There are %f data points, at a rate of %d, so the range is 0-%f." % (len(data), samprate, float(len(data))/samprate)
     #t = arange(0,float(len(data))/samprate,dt)
     t = arange(time1,time2,dt)
+    print "%d points in t, but %d points in x" % (len(t), len(data[(time1*samprate):int(time2*samprate)]))
     fig2 = plt.figure()
     ax_single = fig2.add_subplot(111)
-    ax_single.plot(t, data[time1*samprate:time2*samprate], 'b-')
+    ax_single.plot(t, data[int(time1*samprate):int(time2*samprate)], 'b-')
     ax_single.set_xlim([time1, time2])
     ax_single.set_autoscale_on(False)
     ax_single.set_ylabel('Millivolts')
@@ -285,6 +288,24 @@ def analyzesingle(data, time1, time2, samprate, name="Data"):
     fig2.clf()
     plt.close()
     del t
+    sys.exit()
+
+def analyze8x8Group(data_group, time=1, samprate = -1, resolution = 500):
+    data = []
+    for dataset in data_group.keys():
+        data.append(data_group[dataset])
+        print "loaded " + data_group.name+"/"+dataset
+    if(samprate == -1 and data_group.attrs.keys().__contains__("sampling_rate")):
+        try:
+            samprate = int(data_group.attrs["sampling_rate"])
+        except TypeError:
+            print "Found a sampling_rate, but the value was not a scalar string. Using default..."
+            samprate = 20000
+    else:
+        samprate = 20000
+    print "Graphing data with sampling rate of "+samprate.__repr__()+", time window "+time.__repr__()+"s"
+    print resolution.__repr__()+" points per window."
+    analyze8x8data(data, time, samprate, resolution)
 
 if __name__ == '__main__':
    analyze8x8data([[1,2,1,4],[2,3,4,5]])
