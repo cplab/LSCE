@@ -204,7 +204,11 @@ class data_analysis(object):
                 return
         if 'user_args' in kwargs:
             params['user_args'] = kwargs['user_args']
-        fun(params)
+        try:
+            fun(params)
+            self.f.flush()
+        except:
+            print "Exception in function."
         
 # Sample analysis method
 def high_demo_filter(params):
@@ -219,5 +223,4 @@ def high_demo_filter(params):
             results[i] = 0
         else:
             results[i] = data[i]
-    self.f.flush()
     return results
