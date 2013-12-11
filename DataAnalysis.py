@@ -43,6 +43,7 @@ class data_analysis(object):
         """
         self.f = h5py.File(file_path)
         self.sampling_rate = int(self.f['raw_data'].attrs['sampling_rate'])
+        self.staged_dataset = None
         print "File " + `file_path` +  " has been loaded."
 
     def load_dataset(self, dataset_name, group_name = None, rename = None, save = False):
