@@ -15,24 +15,15 @@ electrodes = [
     67, 77, 87, 28, 38, 48, 58, 68, 78
 ]
 
-def __smash2(filedir, workingdir, type, fileNum):
-    savedir = os.path.join(filedir, type)
+def __smash2(fileDir, workingdir, type, fileNum):
+    savedir = os.path.join(fileDir, type)
     filename = savedir+"%04d"%(fileNum)+".raw"
     print filename
     fid = file(filename, 'rb')
-    #fileSize = os.stat(filename).st_size
-    #data = array.array("H")
-    #data.fromfile(fid, fileSize/2)
+
     data = np.fromfile(fid, dtype=np.uint16)
-    #print len(data)
-    #temp = np.zeros((1,len(data)))
-    #data = data.astype(np.float32, copy=False)
-    #print len(data)
-    #convertedData = [(x-32768)*0.0104 for x in data]
-    #data -= 32768
-    #data *= 0.0104
+
     numelec = 60
-    #out = []
     for i in range(numelec):
         #The whole is too big to fit into memory, so we process chunk by chunk
         temp = data[i:data.size:numelec]
@@ -49,9 +40,6 @@ def __mergemat(filename, numFiles, Fs):
 
     for i in xrange(numFiles):
         temp = np.load(filename + str(i)+".npy")
-        #if index+temp.size>=dataheap.size:
-        #    dataheap.resize((index+temp.size, 1))
-            #print "resizing"
         temp.resize((temp.size,1))
         dataheap[index:index+temp.size] = temp
         index = index + temp.size
@@ -63,11 +51,12 @@ def __mergemat(filename, numFiles, Fs):
     holder['dataheap'] = dataheap
     return holder
 
-def loadFromMat(filedir, Fs=10e3, rFs=256):
+def loadFromMat(fileDir, outputDir='.', Fs=10e3, rFs=256):
     """Loads folder of matlab data files and saves them in numpy format.
 
     Args:
-        filedir: the root folder to import
+        fileDir: the root folder to import
+        outputDir: the folder to output processed files to, defaults to current
         Fs: sampling frequency rate
         rFS: resampling frequency rate
 
@@ -77,25 +66,26 @@ def loadFromMat(filedir, Fs=10e3, rFs=256):
     for ii in electrodes:
         print "Parsing electrode " + ii.__repr__()
         mat = scipy.io.loadmat(
-            "{0}{2}Electrode_{1}_master.mat".format(filedir, ii, os.sep)
+            "{0}{2}Electrode_{1}_master.mat".format(fileDir, ii, os.sep)
         )["dataheap"]
         print "Load success."
         data = np.array(mat[pts[0]:pts[1]], order='C', dtype=np.float32)
         data = np.subtract(data, np.mean(data))
-        np.save("{0}{2}Electrode_{1}_master".format(filedir, ii, os.sep), data)
+        np.save("{0}{2}Electrode_{1}_master".format(outputDir, ii, os.sep), data)
         print "saved electrode "+ ii.__repr__()
         mat = None
         gc.collect()
 
-    return filedir
+    return fileDir
 
-def loadFromRaw(filedir, numFiles=6, type='slice2_', Fs=20e3, saveMat=False):
+def loadFromRaw(fileDir, numFiles=6, type='slice2_', outputDir='.', Fs=20e3, saveMat=False):
     """Loads folder of raw data files and saves them in numpy or Matlab format.
 
     Args:
-        filedir: the root folder to import
+        fileDir: the root folder to import
         numFiles: the number of time slices
         type: prefix of the file type, note this also determins output folder
+        outputDir: the folder to output processed files to, defaults to current
         Fs: sampling frequency rate
         saveMat: whether to ouput Matlab files instead of Numpy files
 
@@ -104,20 +94,19 @@ def loadFromRaw(filedir, numFiles=6, type='slice2_', Fs=20e3, saveMat=False):
     try:
         print "Smashing....\n"
         for i in xrange(numFiles):
-            __smash2(filedir, workingdir, type, i)
+            __smash2(fileDir, workingdir, type, i)
         
         print "Merging....\n"
         for i in range(60):
             print "\r%d of %d"%(i,60)
             file = workingdir + os.sep + "Electrode_" + str(electrodes[i]) + "_"
-            if (not (os.path.isdir(os.path.join(filedir,type)))):
-                os.mkdir(os.path.join(filedir,type))
+            if (not (os.path.isdir(os.path.join(fileDir,type)))):
+                os.mkdir(os.path.join(fileDir,type))
             holder = __mergemat(file, numFiles, Fs)
-            #f = open("{0}{2}{3}{2}Electrode_{1}_master".format(filedir, electrodes[i], os.sep, type) + ".mat", "w")
             if saveMat:
-                scipy.io.savemat("{0}{2}{3}{2}Electrode_{1}_master".format(filedir, electrodes[i], os.sep, type), holder)
+                scipy.io.savemat("{0}{2}{2}Electrode_{1}_master".format(outputDir, electrodes[i], os.sep), holder)
             else:
-                np.save("{0}{2}{3}{2}Electrode_{1}_master".format(filedir, electrodes[i], os.sep, type), holder['dataheap'])
+                np.save("{0}{2}{2}Electrode_{1}_master".format(outputDir, electrodes[i], os.sep), holder['dataheap'])
             holder = None
             gc.collect()
         print "\nDone!"
