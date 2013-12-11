@@ -16,8 +16,8 @@ $ python.exe fullrun.py C:\\path\\to\\rawdata  C:\\path\\to\\newhdf5file
 """
 
 def main(argv=None):
-    Importer.loadFromRaw(argv[1], numFiles = 2)
-    DataFormatter.formatData(argv[1], argv[2])
+    #Importer.loadFromRaw(argv[1], numFiles = 2)
+    DataFormatter.formatData('.', argv[2])
     tmp = h5py.File("{0}.hdf5".format(argv[2]), "r+")
     data = []
     for dataset in tmp["raw_data"].keys():
