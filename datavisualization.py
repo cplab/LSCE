@@ -71,7 +71,11 @@ class MyFrame(wx.Frame):
         #Bind Events, Scrollbar & Button Press
         self.canvas.Bind(wx.EVT_SCROLLWIN_THUMBTRACK, self.OnScrollEvt)
         self.canvas.Bind(wx.EVT_SCROLLWIN_THUMBRELEASE, self.OnScrollStop)
-        self.canvas.mpl_connect('button_press_event',self.onclick)   
+        self.canvas.Bind(wx.EVT_SCROLLWIN_LINEDOWN, self.OnScrollLeft_small)
+        self.canvas.Bind(wx.EVT_SCROLLWIN_LINEUP, self.OnScrollRight_small)
+        self.canvas.Bind(wx.EVT_SCROLLWIN_PAGEDOWN, self.OnScrollLeft_large)
+        self.canvas.Bind(wx.EVT_SCROLLWIN_PAGEUP, self.OnScrollRight_large)
+        self.canvas.mpl_connect('button_press_event',self.onclick)
 
 
     def init_data(self):
@@ -109,8 +113,8 @@ class MyFrame(wx.Frame):
         self.startTime = wx.TextCtrl(self.panel, value="Start Time: "+
             (float(self.i_start)/self.samprate).__repr__()+"s", pos=(self.label1x, self.labely), size=(self.labelwidth,-1))
         self.endTime = wx.TextCtrl(self.panel, value="End Time: "+
-            (float(self.i_end)/self.samprate).__repr__()+"s", pos=(self.label2x, self.labely), size=(self.labelwidth,-1))        
-        
+            (float(self.i_end)/self.samprate).__repr__()+"s", pos=(self.label2x, self.labely), size=(self.labelwidth,-1))
+
         #creating each sub plot
         self.axes=[]
         self.graphs = []
@@ -137,7 +141,7 @@ class MyFrame(wx.Frame):
         Updates the section of data displayed according to scrolling event
         resAdj: gives the fraction of the designated resolution to display at. ie 1 being the original resolution and 0.5 being half the resolution
         """
-        print self.stepsize
+        # print self.stepsize
         temp = self.stepsize
         self.stepsize = int(self.stepsize/resAdj)
         # Adjust plot limits:
@@ -158,24 +162,48 @@ class MyFrame(wx.Frame):
         self.startTime.Refresh()
         self.endTime.Refresh()
         
+    def ScrollPlots(self):
+        #Update the label values and set the plot ranges.
+        self.i_start = self.i_min + self.canvas.GetScrollPos(wx.HORIZONTAL)
+        self.i_end = self.i_min + self.i_window + self.canvas.GetScrollPos(wx.HORIZONTAL)
+        self.startTime.ChangeValue("Start Time: " + (float(self.i_start)/self.samprate).__repr__()+"s")
+        self.endTime.ChangeValue("End Time: " + (float(self.i_end)/self.samprate).__repr__()+"s")     
+
+    def OnScrollRight_small(self, event):
+        self.canvas.SetScrollPos(wx.HORIZONTAL, self.canvas.GetScrollPos(wx.HORIZONTAL)-self.i_window/4, True)
+        self.ScrollPlots()
+        self.draw_plot()
+
     
+    def OnScrollLeft_small(self, event):
+        self.canvas.SetScrollPos(wx.HORIZONTAL, self.canvas.GetScrollPos(wx.HORIZONTAL)+self.i_window/4, True)
+        self.ScrollPlots()
+        self.draw_plot()
+    
+    def OnScrollRight_large(self, event):
+        self.canvas.SetScrollPos(wx.HORIZONTAL, self.canvas.GetScrollPos(wx.HORIZONTAL)-self.i_window, True)
+        self.ScrollPlots()
+        self.draw_plot()
+    
+    def OnScrollLeft_large(self, event):
+        self.canvas.SetScrollPos(wx.HORIZONTAL, self.canvas.GetScrollPos(wx.HORIZONTAL)+self.i_window, True)
+        self.ScrollPlots()
+        self.draw_plot()
+
     def OnScrollEvt(self, event):
         """
         Handles Graph Scrolling
         """
         
-        if((datetime.datetime.utcnow()-self.lastupdate).microseconds>500000):
-            self.draw_plot(0.05)
+        if((datetime.datetime.utcnow()-self.lastupdate).microseconds>750000):
+            self.draw_plot(0.1)
             self.lastupdate = datetime.datetime.utcnow()
         
-        # Update the indices of the plot:
-        self.i_start = self.i_min + event.GetPosition()
-        self.i_end = self.i_min + self.i_window + event.GetPosition()        
-        
-        #Update Scrollbar & labels
+        #Set new scroll position
         self.canvas.SetScrollPos(wx.HORIZONTAL, event.GetPosition(), True)
-        self.startTime.ChangeValue("Start Time: " + (float(self.i_start)/self.samprate).__repr__()+"s")
-        self.endTime.ChangeValue("End Time: " + (float(self.i_end)/self.samprate).__repr__()+"s")     
+
+        #Update the indicies of the plots:
+        self.ScrollPlots()
     
     
     def OnScrollStop(self, event):
