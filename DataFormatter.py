@@ -5,7 +5,7 @@ import time
 import ConfigParser
 
 
-def timestamp():
+def __timestamp():
     return time.strftime("_%H-%M-%S-0000_%m-%d-%Y_GMT", time.gmtime())
 
 
@@ -54,7 +54,7 @@ def formatData(fileDir, name, conf="config.ini", *options):
             tmp = np.load(files)
             #Check for a naming conflict. For fresh HDF5 files, this should never happen
             if(files[0:files.index(".npy")] in data_dir):
-                conflict_name = (files[0:files.index(".npy")] + "_conflicted_copy_" + timestamp())
+                conflict_name = (files[0:files.index(".npy")] + "_conflicted_copy_" + __timestamp())
                 dset = data_dir.create_dataset(conflict_name, data=tmp, chunks=True)
             else:
                 dset = data_dir.create_dataset(files[0:files.index(".npy")], chunks=True, data=tmp)
@@ -68,7 +68,8 @@ def formatData(fileDir, name, conf="config.ini", *options):
                 data_dir.attrs.modify("count", numsets + 1)
             else:
                 data_dir.attrs.modify("count", 1)
-    data_dir.attrs.modify("last_modified", timestamp())
+    data_dir.attrs.modify("last_modified", __timestamp())
+
     #At this point, the raw datasets have each been imported from the .npy files.
     #We now read any metadata from the given configuration file.
     config = ConfigParser.SafeConfigParser(allow_no_value=True)
@@ -77,13 +78,13 @@ def formatData(fileDir, name, conf="config.ini", *options):
         config.read(conf)
         for (key, value) in config.items("raw_data"):
             data_dir.attrs.create(key, value)
-            print "raw_data: "+key.__repr__()+"="+value.__repr__()
+            print "Setting attribute in raw_data: "+key.__repr__()+"="+value.__repr__()
         for section in config.sections():
             if section == "raw_data":
                 continue
             if(section in data_dir.keys()):
                 for (key, value) in config.items(section):
-                    print section+": "+key.__repr__()+"="+value.__repr__()
+                    print "Setting attribute in "+section+": "+key.__repr__()+"="+value.__repr__()
                     data_dir[section].attrs.create(key, value)
             else:
                 print "Error in reading config file: There is no dataset \""+section+"\". Continuing..."
@@ -95,20 +96,3 @@ def formatData(fileDir, name, conf="config.ini", *options):
     f.flush()
     f.close()
     del f
-
-
-def formatwrapper(**kwargs):
-    fileDir = ""
-    name = ""
-    options = []
-    conf = "config.ini"
-    for (x, y) in kwargs:
-        if x == "fileDir":
-            fileDir = y
-        if x == "name":
-            name = y
-        if x == "options":
-            options = y
-        if x == "conf":
-            conf = y
-    formatData(fileDir, name, conf, options)
