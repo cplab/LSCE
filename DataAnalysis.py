@@ -4,6 +4,7 @@ import sys
 from scipy.signal import butter, lfilter
 import datetime
 import atexit
+from hashlib import md5
 
 import h5py
 
@@ -42,7 +43,10 @@ class data_analysis(object):
                file_path: The path of the HDF5 file.
         """
         self.f = h5py.File(file_path)
-        self.sampling_rate = int(self.f['raw_data'].attrs['sampling_rate'])
+        try:
+            self.sampling_rate = int(self.f['raw_data'].attrs['sampling_rate'])
+        except:
+            print "Sampling rate could not be loaded from HDF5 file. Certain functions cannot be used without sampling rate."
         self.staged_dataset = None
         print "File " + `file_path` +  " has been loaded."
 
@@ -113,6 +117,7 @@ class data_analysis(object):
         self.f.require_group("data_analysis")
         try:
             self.f.move(self.staged_dataset.name, '/data_analysis/' + rename)
+            self.f.flush()
         except:
             print "Could not save dataset."
             return
@@ -133,6 +138,7 @@ class data_analysis(object):
         previous_name = ''.join(self.staged_dataset.name.split('/')[-1:])
         try:
             self.f.move(self.staged_dataset.name, '/'.join(self.staged_dataset.name.split('/')[:-1]) + '/' + rename)
+            self.f.flush()
         except:
             print "Could not rename dataset."
             return
@@ -156,6 +162,9 @@ class data_analysis(object):
                time_range: A size 2 array representing the inclusive time range in seconds to be isolated. The first element 
                is the beginning of the time range and the second element is the end of the time range.
         """
+        if self.sampling_rate == 0:
+                print "Sampling rate not set. Isolation aborted."
+                return
         if len(time_range) > 2 or time_range[0] < 0 or time_range[1] <= 0:
             print "Malformed time_range. time_range must be size 2."
             return
@@ -169,11 +178,16 @@ class data_analysis(object):
                 print "Time range is outside dataset."
                 return
             converted_time_range = [converted_time_range[0] - converted_existing_time_range[0], converted_time_range[1] - converted_existing_time_range[0]]
-        self.staged_dataset.attrs['time_range'] = time_range
         sliced = self.staged_dataset[converted_time_range[0]:converted_time_range[1]+1]
-        self.staged_dataset.resize(sliced.shape) # TODO: NEED CHUNKED DATASETS TO RESIZE
-        self.staged_dataset.write_direct(sliced)
+        temporary_name = md5(str(datetime.datetime.now())).hexdigest()
+        staged_group_name = self.staged_dataset.name.split('/')[1]
+        temporary_dataset = self.f[staged_group_name].create_dataset(temporary_name, data=sliced)
+        temporary_dataset.attrs['time_range'] = time_range
+        prev_name = self.staged_dataset.name.split('/')[2]
+        del self.f[staged_group_name][prev_name]
         self.f.flush()
+        self.stage_dataset(staged_group_name,temporary_name)
+        self.rename_dataset(prev_name)
         print "Dataset isolated based on time range."
 
     def run_analysis(self, fun, **kwargs):
