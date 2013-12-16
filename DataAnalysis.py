@@ -4,6 +4,7 @@ import sys
 from scipy.signal import butter, lfilter
 import datetime
 import atexit
+from hashlib import md5
 
 import h5py
 
@@ -42,7 +43,10 @@ class data_analysis(object):
                file_path: The path of the HDF5 file.
         """
         self.f = h5py.File(file_path)
-        self.sampling_rate = int(self.f['raw_data'].attrs['sampling_rate'])
+        try:
+            self.sampling_rate = int(self.f['raw_data'].attrs['sampling_rate'])
+        except:
+            print "Sampling rate could not be loaded from HDF5 file. Certain functions cannot be used without sampling rate."
         self.staged_dataset = None
         print "File " + `file_path` +  " has been loaded."
 
@@ -71,7 +75,6 @@ class data_analysis(object):
         if group_name is not None:
             if group_name in self.f and dataset_name in self.f[group_name]:
                 try:
-                    # TODO Group name might be multi-level now, also group_name formatting
                     self.f.copy("/" + group_name + "/" + dataset_name, "/" + destination_group_name + "/" + rename)
                 except:
                     print "Could not load dataset."
@@ -94,14 +97,16 @@ class data_analysis(object):
         self.staged_dataset = self.f[destination_group_name][rename]
         print "Dataset " + dataset_name + " loaded and staged as " + rename + "."
 
-    def save_dataset(self, rename = None):
+    def save_dataset(self, rename = None, overwrite = False):
         """Moves the staged dataset to the 'data_analysis' group and re-stages the moved dataset. 
 
            Args:
                rename: The name the saved dataset is renamed as. The default rename is the current 
                        staged dataset name.
+               overwrite: If a dataset named `rename` is already in the 'data_analysis' group, overwrite
+                          needs to be set True in order for the save to complete. The previous dataset will
+                          be overwritten.
         """
-        # TODO: Create a subgroup?
         if self.f == None:
             print "There is no file loaded."
             return
@@ -111,8 +116,17 @@ class data_analysis(object):
         previous_name = ''.join(self.staged_dataset.name.split('/')[-1:])
         rename = previous_name if rename is None else rename
         self.f.require_group("data_analysis")
+        if self.staged_dataset.name.split('/')[1] == 'data_analysis' and rename == previous_name:
+            print "Cannot save the dataset as itself. Aborting save."
+            return
         try:
+            if rename in self.f['data_analysis'] and not overwrite:
+                print "Dataset " + rename + " already exists in group data_analysis and overwrite not requested. Aborting save."
+                return
+            elif rename in self.f['data_analysis'] and overwrite:
+                del self.f['data_analysis'][rename]
             self.f.move(self.staged_dataset.name, '/data_analysis/' + rename)
+            self.f.flush()
         except:
             print "Could not save dataset."
             return
@@ -122,8 +136,9 @@ class data_analysis(object):
             print "Dataset " + previous_name + " saved and renamed " + rename + "."
         self.stage_dataset('data_analysis', rename)
 
-    def rename_dataset(self, rename):
-        """Renames the staged dataset."""
+    def rename_dataset(self, rename, overwrite = False):
+        """Renames the staged dataset. If the dataset with the name rename appears in the staged dataset's group, overwrite
+           needs to be set to True in order to complete the rename. The previous dataset will be overwritten"""
         if self.f == None:
             print "There is no file loaded."
             return
@@ -131,10 +146,21 @@ class data_analysis(object):
             print "There is no dataset staged."
             return
         previous_name = ''.join(self.staged_dataset.name.split('/')[-1:])
+        group = self.staged_dataset.name.split('/')[1]
+        if rename == previous_name:
+            print "Staged dataset is already named " + rename + ". Aborting rename."
+            return
         try:
+            if rename in self.f[group] and not overwrite:
+                print "Dataset " + rename + " already exists in group " + group + " and overwrite not requested. Aborting rename."
+                return
+            elif rename in self.f[group] and overwrite:
+                del self.f[group][rename]
             self.f.move(self.staged_dataset.name, '/'.join(self.staged_dataset.name.split('/')[:-1]) + '/' + rename)
-        except:
+            self.f.flush()
+        except e:
             print "Could not rename dataset."
+            print e
             return
         print "Dataset " + previous_name + " renamed " + rename + "."
 
@@ -156,6 +182,9 @@ class data_analysis(object):
                time_range: A size 2 array representing the inclusive time range in seconds to be isolated. The first element 
                is the beginning of the time range and the second element is the end of the time range.
         """
+        if self.sampling_rate == 0:
+                print "Sampling rate not set. Isolation aborted."
+                return
         if len(time_range) > 2 or time_range[0] < 0 or time_range[1] <= 0:
             print "Malformed time_range. time_range must be size 2."
             return
@@ -169,15 +198,20 @@ class data_analysis(object):
                 print "Time range is outside dataset."
                 return
             converted_time_range = [converted_time_range[0] - converted_existing_time_range[0], converted_time_range[1] - converted_existing_time_range[0]]
-        self.staged_dataset.attrs['time_range'] = time_range
         sliced = self.staged_dataset[converted_time_range[0]:converted_time_range[1]+1]
-        self.staged_dataset.resize(sliced.shape) # TODO: NEED CHUNKED DATASETS TO RESIZE
-        self.staged_dataset.write_direct(sliced)
+        temporary_name = md5(str(datetime.datetime.now())).hexdigest()
+        staged_group_name = self.staged_dataset.name.split('/')[1]
+        temporary_dataset = self.f[staged_group_name].create_dataset(temporary_name, data=sliced)
+        temporary_dataset.attrs['time_range'] = time_range
+        prev_name = self.staged_dataset.name.split('/')[2]
+        del self.f[staged_group_name][prev_name]
         self.f.flush()
+        self.stage_dataset(staged_group_name,temporary_name)
+        self.rename_dataset(prev_name)
         print "Dataset isolated based on time range."
 
     def run_analysis(self, fun, **kwargs):
-        """Runs an analysis function on the current dataset.
+        """Runs an analysis function on the current dataset and returns the results of the function.
 
            Args:
                fun: The analysis function to be run. Must take a dictionary of parameters as input.
@@ -206,22 +240,9 @@ class data_analysis(object):
         if 'user_args' in kwargs:
             params['user_args'] = kwargs['user_args']
         try:
-            fun(params)
+            results = fun(params)
             self.f.flush()
-        except:
+        except e:
             print "Exception in function."
-        
-# Sample analysis method
-def high_demo_filter(params):
-    results = params['save']
-    data = params['data']
-    freq = params['sampling_rate']
-    print "Processing dataset. Please wait..."
-    for i in range(len(data)):
-        if i % (len(data)/10) == 0:
-            print (i/(len(data)/10)).__repr__()+"0% complete."
-        if abs(data[i]) < freq:
-            results[i] = 0
-        else:
-            results[i] = data[i]
-    return results
+            print e
+        return results
