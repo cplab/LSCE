@@ -75,7 +75,6 @@ class data_analysis(object):
         if group_name is not None:
             if group_name in self.f and dataset_name in self.f[group_name]:
                 try:
-                    # TODO Group name might be multi-level now, also group_name formatting
                     self.f.copy("/" + group_name + "/" + dataset_name, "/" + destination_group_name + "/" + rename)
                 except:
                     print "Could not load dataset."
@@ -98,14 +97,16 @@ class data_analysis(object):
         self.staged_dataset = self.f[destination_group_name][rename]
         print "Dataset " + dataset_name + " loaded and staged as " + rename + "."
 
-    def save_dataset(self, rename = None):
+    def save_dataset(self, rename = None, overwrite = False):
         """Moves the staged dataset to the 'data_analysis' group and re-stages the moved dataset. 
 
            Args:
                rename: The name the saved dataset is renamed as. The default rename is the current 
                        staged dataset name.
+               overwrite: If a dataset named `rename` is already in the 'data_analysis' group, overwrite
+                          needs to be set True in order for the save to complete. The previous dataset will
+                          be overwritten.
         """
-        # TODO: Create a subgroup?
         if self.f == None:
             print "There is no file loaded."
             return
@@ -115,7 +116,15 @@ class data_analysis(object):
         previous_name = ''.join(self.staged_dataset.name.split('/')[-1:])
         rename = previous_name if rename is None else rename
         self.f.require_group("data_analysis")
+        if self.staged_dataset.name.split('/')[1] == 'data_analysis' and rename == previous_name:
+            print "Cannot save the dataset as itself. Aborting save."
+            return
         try:
+            if rename in self.f['data_analysis'] and not overwrite:
+                print "Dataset " + rename + " already exists in group data_analysis and overwrite not requested. Aborting save."
+                return
+            elif rename in self.f['data_analysis'] and overwrite:
+                del self.f['data_analysis'][rename]
             self.f.move(self.staged_dataset.name, '/data_analysis/' + rename)
             self.f.flush()
         except:
@@ -127,8 +136,9 @@ class data_analysis(object):
             print "Dataset " + previous_name + " saved and renamed " + rename + "."
         self.stage_dataset('data_analysis', rename)
 
-    def rename_dataset(self, rename):
-        """Renames the staged dataset."""
+    def rename_dataset(self, rename, overwrite = False):
+        """Renames the staged dataset. If the dataset with the name rename appears in the staged dataset's group, overwrite
+           needs to be set to True in order to complete the rename. The previous dataset will be overwritten"""
         if self.f == None:
             print "There is no file loaded."
             return
@@ -136,11 +146,21 @@ class data_analysis(object):
             print "There is no dataset staged."
             return
         previous_name = ''.join(self.staged_dataset.name.split('/')[-1:])
+        group = self.staged_dataset.name.split('/')[1]
+        if rename == previous_name:
+            print "Staged dataset is already named " + rename + ". Aborting rename."
+            return
         try:
+            if rename in self.f[group] and not overwrite:
+                print "Dataset " + rename + " already exists in group " + group + " and overwrite not requested. Aborting rename."
+                return
+            elif rename in self.f[group] and overwrite:
+                del self.f[group][rename]
             self.f.move(self.staged_dataset.name, '/'.join(self.staged_dataset.name.split('/')[:-1]) + '/' + rename)
             self.f.flush()
-        except:
+        except e:
             print "Could not rename dataset."
+            print e
             return
         print "Dataset " + previous_name + " renamed " + rename + "."
 
