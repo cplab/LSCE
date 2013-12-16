@@ -211,7 +211,7 @@ class data_analysis(object):
         print "Dataset isolated based on time range."
 
     def run_analysis(self, fun, **kwargs):
-        """Runs an analysis function on the current dataset.
+        """Runs an analysis function on the current dataset and returns the results of the function.
 
            Args:
                fun: The analysis function to be run. Must take a dictionary of parameters as input.
@@ -240,22 +240,9 @@ class data_analysis(object):
         if 'user_args' in kwargs:
             params['user_args'] = kwargs['user_args']
         try:
-            fun(params)
+            results = fun(params)
             self.f.flush()
-        except:
+        except e:
             print "Exception in function."
-        
-# Sample analysis method
-def high_demo_filter(params):
-    results = params['save']
-    data = params['data']
-    freq = params['sampling_rate']
-    print "Processing dataset. Please wait..."
-    for i in range(len(data)):
-        if i % (len(data)/10) == 0:
-            print (i/(len(data)/10)).__repr__()+"0% complete."
-        if abs(data[i]) < freq:
-            results[i] = 0
-        else:
-            results[i] = data[i]
-    return results
+            print e
+        return results
